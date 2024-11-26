@@ -1,6 +1,6 @@
 -- Mock Database for Social Media API distnet
 CREATE DATABASE distnetdb CHARACTER SET utf8mb4 COLLATE utf8mb4
-\c distnetdb
+--\c distnetdb
 
 -- Drop existing tables if they exist
 DROP TABLE IF EXISTS relationships;
@@ -12,9 +12,10 @@ CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL, /* Considering use a strong hashing algorithm 
+                                          like bcrypt or Argon2 */
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
 );
 
 -- Messages table: Stores user messages
@@ -58,10 +59,16 @@ INSERT INTO relationships (follower_id, followee_id) VALUES
 
 
 -- Creating Database User
-CREATE USER 'web'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON disnetdb.
+CREATE USER 'web'@'localhost' IDENTIFIED BY 'pass';
+
+-- Grant necessary privileges to the database user
+GRANT SELECT, INSERT, UPDATE, DELETE ON distnetdb.
 * TO 'web'@'localhost';
-ALTER USER 'web'@'localhost' IDENTIFIED BY 'pass';
+
+-- Apply changes to user privileges
+FLUSH PRIVILEGES;
+
+-- ALTER USER 'web'@'localhost' IDENTIFIED BY 'pass'; !!!!!!!!!!!
 
 -- Select data to verify
 SELECT * FROM users;
