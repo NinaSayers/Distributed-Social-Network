@@ -6,7 +6,7 @@ import "net/http"
 func (app *application) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.feed)
-	mux.HandleFunc("/post/create", app.createPost)
+	mux.HandleFunc("/message", app.createPost)
 
 	return mux
 }

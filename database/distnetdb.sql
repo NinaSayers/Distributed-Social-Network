@@ -1,0 +1,62 @@
+-- Seleccionar la base de datos antes de usarla o crearla
+CREATE DATABASE IF NOT EXISTS distnetdb;
+USE distnetdb;
+
+-- Asegurarse de eliminar tablas existentes para evitar conflictos
+DROP TABLE IF EXISTS relationships;
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS users;
+
+-- Crear tabla de usuarios
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Crear tabla de mensajes
+CREATE TABLE messages (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL CHECK (CHAR_LENGTH(content) <= 280), -- Limitar a 280 caracteres
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- Crear tabla de relaciones (seguidores/seguidos)
+CREATE TABLE relationships (
+    relationship_id INT AUTO_INCREMENT PRIMARY KEY,
+    follower_id INT NOT NULL,
+    followee_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (follower_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (followee_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    UNIQUE (follower_id, followee_id) -- Evitar duplicados
+);
+
+-- Insertar datos de ejemplo en la tabla de usuarios
+INSERT INTO users (username, email, password_hash) VALUES
+('alice', 'alice@example.com', 'hashed_password_1'),
+('bob', 'bob@example.com', 'hashed_password_2'),
+('carol', 'carol@example.com', 'hashed_password_3');
+
+-- Insertar datos de ejemplo en la tabla de mensajes
+INSERT INTO messages (user_id, content) VALUES
+(1, 'Hello, this is Alice!'),
+(2, 'Hi, I am Bob and this is my first post.'),
+(3, 'Carol here, exploring the platform!');
+
+-- Insertar datos de ejemplo en la tabla de relaciones
+INSERT INTO relationships (follower_id, followee_id) VALUES
+(1, 2), -- Alice sigue a Bob
+(2, 3), -- Bob sigue a Carol
+(3, 1); -- Carol sigue a Alice
+
+-- Verificar datos insertados
+SELECT * FROM users;
+SELECT * FROM messages;
+SELECT * FROM relationships;
