@@ -1,8 +1,11 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+	"fmt"
+)
 
-func (app *application) feed(w http.ResponseWriter, r *http.Request) {
+func (app *application) feed(w http.ResponseWriter, r *http.Request) { // creo que esto hay que borrarlo
 	if r.URL.Path != "/" {
 		app.notFound(w)
 		return
@@ -16,7 +19,26 @@ func (app *application) createPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Creating user"))
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", http.MethodPost)
+		app.clientError(w, http.StatusMethodNotAllowed)
+		return
+	}
+
+	username := "Mike"
+	email := "mike@example.com"
+	password_hash := "abcd1234"
+
+	id, err := app.users.Create(username, email, password_hash)
+	
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/user/view?id=%d", id), http.StatusSeeOther) // verify route!!!!!!!!!!!!!!!!
+
+	// w.Write([]byte("Creating user"))
 }
 
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {

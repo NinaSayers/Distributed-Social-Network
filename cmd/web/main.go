@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"distnet/internal/models"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -13,6 +14,8 @@ import (
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	users *models.UserModel
+	posts *models.PostModel //siii, falta el resto de las acciones
 }
 
 func main() {
@@ -47,6 +50,7 @@ func main() {
 }
 
 func openDB(dsn string) (*sql.DB, error) {
+	dsn += "&sslmode=require" 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
@@ -56,3 +60,5 @@ func openDB(dsn string) (*sql.DB, error) {
 	}
 	return db, nil
 }
+
+
