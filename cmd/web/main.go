@@ -15,7 +15,7 @@ type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
 	users *models.UserModel
-	posts *models.PostModel //siii, falta el resto de las acciones
+	posts *models.PostModel //siii, falta el resto de los models
 }
 
 func main() {
@@ -50,7 +50,6 @@ func main() {
 }
 
 func openDB(dsn string) (*sql.DB, error) {
-	dsn += "&sslmode=require" 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
