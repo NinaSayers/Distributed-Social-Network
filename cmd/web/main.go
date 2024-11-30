@@ -15,7 +15,7 @@ type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
 	users    *models.UserModel
-	posts    *models.PostModel //siii, falta el resto de los models
+	// posts    *models.PostModel //siii, falta el resto de los models
 }
 
 func main() {
