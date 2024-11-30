@@ -35,7 +35,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /users/{id}/messages/sent", app.ListSentMessagesHandler)
 
 	mux.HandleFunc("POST /auth/login", app.LoginHandler)
-	mux.HandleFunc("POST /auth/logout", app.LogoutHandler)
+	// mux.HandleFunc("POST /auth/logout", app.LogoutHandler)
 	mux.HandleFunc("POST /auth/register", app.RegisterUserHandler)
 
 	return app.recoverPanic(

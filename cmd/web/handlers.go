@@ -237,13 +237,25 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := app.models.User.Authenticate(payload.Email, payload.Password)
-	app.writeJSON(w, http.StatusOK, id, nil)
+	user, err := app.models.User.Authenticate(payload.Email, payload.Password)
+	if err != nil {
+		app.invalidCredentialsResponse(w, r) //arreglar esto con el error correspondiente
+		return
+	}
+
+	token, err := GenerateJWT(user.Username)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.writeJSON(w, http.StatusOK, map[string]interface{}{"token": token, "user": user}, nil)
 
 }
-func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
+
+// func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+// 	w.Write([]byte("Getting users"))
+// }
+
 func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
