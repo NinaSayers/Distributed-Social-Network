@@ -6,7 +6,6 @@ import "net/http"
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	// mux.HandleFunc("/", app.feed)
-	mux.HandleFunc("POST /message", app.createPost)
 	mux.HandleFunc("GET	/users", app.ListUsersHandler)
 	mux.HandleFunc("POST /users", app.CreateUserHandler)
 	mux.HandleFunc("GET /users/{id}", app.GetUserHandler)
@@ -16,10 +15,11 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("DELETE /users/{id}/follow", app.UnfollowUserHandler)
 	mux.HandleFunc("GET	/users/{id}/followers", app.ListFollowersHandler)
 	mux.HandleFunc("GET	/users/{id}/following", app.ListFollowingHandler)
-
-	mux.HandleFunc("POST /tweets", app.CreateTweetHandler)
-	mux.HandleFunc("GET /tweets/{id}", app.GetTweetHandler)
-	mux.HandleFunc("GET /users/{id}/tweets", app.ListUserTweetsHandler)
+	
+	mux.HandleFunc("POST /messages", app.CreateMessageHandler)
+	// mux.HandleFunc("POST /tweets", app.CreateTweetHandler)
+	mux.HandleFunc("GET /messages/{id}", app.GetMessageHandler)
+	mux.HandleFunc("GET /users/{id}/messages", app.ListUserMessagesHandler)
 	mux.HandleFunc("GET /timeline", app.GetTimelineHandler)
 	mux.HandleFunc("DELETE /tweets/{id}", app.DeleteTweetHandler)
 	mux.HandleFunc("POST /tweets/{id}/retweet", app.RetweetHandler)

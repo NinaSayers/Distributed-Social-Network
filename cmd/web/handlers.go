@@ -19,10 +19,6 @@ func (app *application) feed(w http.ResponseWriter, r *http.Request) { // creo q
 	w.Write([]byte("Hello from Distnet"))
 }
 
-func (app *application) createPost(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Creating a post"))
-}
-
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
@@ -167,7 +163,21 @@ func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request
 	//w.Write([]byte("Getting users"))
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////
+func (app *application) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting users"))
+}
+func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting users"))
+}
+func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting users"))
+}
+func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting users"))
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -178,18 +188,6 @@ func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Requ
 	w.Write([]byte("Getting users"))
 }
 func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) CreateTweetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) GetTweetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) ListUserTweetsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
 func (app *application) DeleteTweetHandler(w http.ResponseWriter, r *http.Request) {
