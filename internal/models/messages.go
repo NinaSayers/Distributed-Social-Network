@@ -57,3 +57,63 @@ func (m *MessageModel) Get(id int) (*Message, error) {
    
 	return p, nil
 }
+
+func (m *MessageModel) ListByUser(userID int64) ([]*Message, error) {
+
+	var count int
+	err := m.DB.QueryRow("SELECT COUNT(*) FROM users WHERE user_id = ?", userID).Scan(&count)
+	if err != nil {
+	 	return nil, NewErrDatabaseOperationFailed(err)
+	}
+	if count == 0 {
+	 	return nil, ErrNoRecord
+	}
+   
+	stmt := `SELECT message_id, user_id, content, created_at 
+	 		FROM messages
+	 		WHERE user_id = ?
+	 		ORDER BY created_at DESC`
+   
+	rows, err := m.DB.Query(stmt, userID)
+	if err != nil {
+	 	return nil, NewErrDatabaseOperationFailed(err)
+	}
+
+	defer rows.Close()
+   
+	messages := []*Message{}
+   
+	for rows.Next() {
+	 	msg := &Message{}
+	 	err = rows.Scan(&msg.MessageID, &msg.UserID, &msg.Content, &msg.CreatedAt)
+	 	if err != nil {
+	  		return nil, NewErrDatabaseOperationFailed(err)
+	 	}
+		messages = append(messages, msg)
+	}
+   
+	if err = rows.Err(); err != nil {
+	 	return nil, NewErrDatabaseOperationFailed(err)
+	}
+   
+	return messages, nil
+   }
+
+func (m *MessageModel) Delete(messageID int64) error {
+
+	res, err := m.DB.Exec("DELETE FROM messages WHERE message_id = ?", messageID)
+	if err != nil {
+	 	return NewErrDatabaseOperationFailed(err)
+	}
+   
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+	 	return NewErrDatabaseOperationFailed(err)
+	}
+   
+	if rowsAffected == 0 {
+	 	return ErrNoRecord
+	}
+   
+	return nil
+}

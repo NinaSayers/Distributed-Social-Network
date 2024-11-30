@@ -21,7 +21,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /messages/{id}", app.GetMessageHandler)
 	mux.HandleFunc("GET /users/{id}/messages", app.ListUserMessagesHandler)
 	mux.HandleFunc("GET /timeline", app.GetTimelineHandler)
-	mux.HandleFunc("DELETE /tweets/{id}", app.DeleteTweetHandler)
+	mux.HandleFunc("DELETE /messages/{id}", app.DeleteMessageHandler)
 	mux.HandleFunc("POST /tweets/{id}/retweet", app.RetweetHandler)
 	mux.HandleFunc("DELETE /tweets/{id}/retweet", app.UndoRetweetHandler)
 	mux.HandleFunc("POST /tweets/{id}/favorite", app.FavoriteTweetHandler)

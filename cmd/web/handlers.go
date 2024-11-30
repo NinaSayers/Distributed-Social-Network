@@ -173,6 +173,9 @@ func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request
 func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
+func (app *application) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting users"))
+}
 func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -188,9 +191,6 @@ func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Requ
 	w.Write([]byte("Getting users"))
 }
 func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) DeleteTweetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
 func (app *application) RetweetHandler(w http.ResponseWriter, r *http.Request) {
