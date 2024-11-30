@@ -1,8 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
+	"strings"
+
+	"distnet/internal/models"
 )
 
 func (app *application) feed(w http.ResponseWriter, r *http.Request) { // creo que esto hay que borrarlo
@@ -38,30 +43,134 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	id, err := app.models.User.Create(payload.UserName, payload.Email, payload.Password)
-
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("created user %d", id)))
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]int{"user_id": id})
+
+	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
 	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
 }
 
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	id, err := strconv.Atoi(r.URL.Query().Get("user_id"))
+
+	if err != nil || id < 1 {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	user, err := app.models.User.Get(id)
+
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	// fmt.Fprintf(w, "%+v", user)
+
+	//w.Write([]byte(fmt.Sprintf("get user %d", user)))
+}
+
+func (app *application) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		app.notFound(w)
+		return
+	}
+	users, err := app.models.User.List()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	// for _, user := range users {
+	// 	fmt.Fprintf(w, "%+v\n", user)
+	// }
+	// w.Write([]byte("Getting users"))
 }
 
 func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+
+	userIDString := strings.TrimPrefix(r.URL.Path, "/users/")
+	userID, err := strconv.Atoi(userIDString)
+	if err != nil || userID <= 0 {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	var user models.User
+	err = json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	user.UserID = userID
+	err = app.models.User.Update(r.Context(), &user)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // Or http.StatusNoContent if you don't want to send a response body.
+	json.NewEncoder(w).Encode(map[string]string{"message": "User updated successfully"})
+
+	//w.Write([]byte("Getting users"))
 }
 
 func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+
+	userIDString := strings.TrimPrefix(r.URL.Path, "/users/")
+	userID, err := strconv.Atoi(userIDString)
+	if err != nil || userID <= 0 {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = app.models.User.Delete(r.Context(), userID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // or http.StatusNoContent
+	json.NewEncoder(w).Encode(map[string]string{"message": "User deleted successfully"})
+
+	//w.Write([]byte("Getting users"))
 }
-func (app *application) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
+
+// //////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
