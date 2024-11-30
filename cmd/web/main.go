@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"distnet/internal/models"
 	"flag"
 	"log"
 	"net/http"
@@ -13,6 +14,8 @@ import (
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	users    *models.UserModel
+	posts    *models.PostModel //siii, falta el resto de los models
 }
 
 func main() {
@@ -33,6 +36,7 @@ func main() {
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
+		users:    &models.UserModel{DB: db},
 	}
 
 	srv := &http.Server{

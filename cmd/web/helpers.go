@@ -16,6 +16,6 @@ func (app *application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
-func (app *application) notFound(w http.ResponseWriter) {
+func (app *application) notFound(w http.ResponseWriter) {  //no idea de donde usar esto
 	app.clientError(w, http.StatusNotFound)
 }
