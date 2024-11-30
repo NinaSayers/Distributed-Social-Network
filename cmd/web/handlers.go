@@ -20,11 +20,24 @@ func (app *application) createPost(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	username := "Mike"
-	email := "mike@example.com"
-	password_hash := "abcd1234"
+	var payload struct {
+		UserName string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
-	id, err := app.users.Create(username, email, password_hash)
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if payload.UserName == "" || payload.Email == "" || payload.Password == "" {
+		app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
+		return
+	}
+
+	id, err := app.models.User.Create(payload.UserName, payload.Email, payload.Password)
 
 	if err != nil {
 		app.serverError(w, err)
@@ -101,7 +114,26 @@ func (app *application) ListSentMessagesHandler(w http.ResponseWriter, r *http.R
 	w.Write([]byte("Getting users"))
 }
 func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+
+	var payload struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if payload.Email == "" || payload.Password == "" {
+		app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
+		return
+	}
+
+	id, err := app.models.User.Authenticate(payload.Email, payload.Password)
+	app.writeJSON(w, http.StatusOK, id, nil)
+
 }
 func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
