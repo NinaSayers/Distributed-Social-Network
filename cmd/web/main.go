@@ -2,11 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"distnet/internal/models"
 	"flag"
 	"log"
 	"net/http"
 	"os"
-	"distnet/internal/models"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -14,8 +14,8 @@ import (
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
-	users *models.UserModel
-	posts *models.PostModel //siii, falta el resto de los models
+	users    *models.UserModel
+	posts    *models.PostModel //siii, falta el resto de los models
 }
 
 func main() {
@@ -36,6 +36,7 @@ func main() {
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
+		users:    &models.UserModel{DB: db},
 	}
 
 	srv := &http.Server{
@@ -59,5 +60,3 @@ func openDB(dsn string) (*sql.DB, error) {
 	}
 	return db, nil
 }
-
-

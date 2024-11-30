@@ -6,7 +6,6 @@ import "net/http"
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	// mux.HandleFunc("/", app.feed)
-	mux.HandleFunc("GET /users", app.GetUserHandler)
 	mux.HandleFunc("POST /message", app.createPost)
 	mux.HandleFunc("POST /users", app.CreateUserHandler)
 	mux.HandleFunc("GET /users/{id}", app.GetUserHandler)

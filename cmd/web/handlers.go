@@ -1,8 +1,8 @@
 package main
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 )
 
 func (app *application) feed(w http.ResponseWriter, r *http.Request) { // creo que esto hay que borrarlo
@@ -25,15 +25,14 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 	password_hash := "abcd1234"
 
 	id, err := app.users.Create(username, email, password_hash)
-	
+
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/user/view?id=%d", id), http.StatusSeeOther) // verify route!!!!!!!!!!!!!!!!
-
-	// w.Write([]byte("Creating user"))
+	w.Write([]byte(fmt.Sprintf("created user %d", id)))
+	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
 }
 
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
