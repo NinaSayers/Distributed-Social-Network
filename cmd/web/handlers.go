@@ -193,6 +193,8 @@ func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Requ
 func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) RetweetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -208,6 +210,11 @@ func (app *application) UnfavoriteTweetHandler(w http.ResponseWriter, r *http.Re
 func (app *application) ListNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
+func (app *application) GetUserStatsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting users"))
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -217,6 +224,8 @@ func (app *application) ListReceivedMessagesHandler(w http.ResponseWriter, r *ht
 func (app *application) ListSentMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
@@ -273,6 +282,4 @@ func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Reque
 	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
 	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
 }
-func (app *application) GetUserStatsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
+

@@ -12,7 +12,8 @@ var (
 	ErrUserCheck          	   = errors.New("models: error checking user existence")
 	ErrPostCreation            = errors.New("models: error creating post")
 	ErrPostIDRetrieval         = errors.New("models: error retrieving post ID")
-	ErrDatabaseOperationFailed = errors.New("models: database operation failed") 
+	ErrDatabaseOperationFailed = errors.New("models: database operation failed")
+	ErrRelationshipExists      = errors.New("models: relationship already exists")
 )
 
 // Función para facilitar la creación de errores con contexto
