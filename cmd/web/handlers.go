@@ -245,7 +245,35 @@ func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
 func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+
+	var payload struct {
+		UserName string `json:"username"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if payload.UserName == "" || payload.Email == "" || payload.Password == "" {
+		app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
+		return
+	}
+
+	id, err := app.models.User.Create(payload.UserName, payload.Email, payload.Password)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]int{"user_id": id})
+
+	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
+	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
 }
 func (app *application) GetUserStatsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))

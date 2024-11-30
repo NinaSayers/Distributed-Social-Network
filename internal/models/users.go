@@ -14,9 +14,9 @@ type User struct {
 	UserID       int       `json:"user_id"`
 	Username     string    `json:"username"`
 	Email        string    `json:"email"`
-	PasswordHash string    `json:"password_hash"`
-	Created_at   time.Time `json:"created_at"`
-	Updated_at   time.Time `json:"updated_at"`
+	PasswordHash string    `json:"-"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type UserModel struct {
@@ -81,7 +81,7 @@ func (m *UserModel) Get(user_id int) (*User, error) {
 
 	u := &User{}
 
-	err := row.Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.Created_at, &u.Updated_at)
+	err := row.Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -114,7 +114,7 @@ func (m *UserModel) List() ([]*User, error) { //pueden haber otras condiciones. 
 	for rows.Next() {
 		u := &User{}
 
-		err = rows.Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.Created_at, &u.Updated_at)
+		err = rows.Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -189,4 +189,28 @@ func (m *UserModel) Delete(ctx context.Context, userID int) error {
 	}
 
 	return nil
+}
+
+func (m UserModel) GetByEmail(email string) (*User, error) {
+	query := `SELECT user_id, created_at, name, email, password_hash FROM users WHERE email = ?`
+	var user User
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err := m.DB.QueryRowContext(ctx, query, email).Scan(
+		&user.UserID,
+		&user.CreatedAt,
+		// &user.Name,
+		&user.Email,
+		&user.PasswordHash,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, err
+		default:
+			return nil, err
+		}
+	}
+	return &user, nil
 }
