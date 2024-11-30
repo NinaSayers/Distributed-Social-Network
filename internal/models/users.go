@@ -98,7 +98,7 @@ func (m *UserModel) Get(user_id int) (*User, error) {
 func (m *UserModel) List() ([]*User, error) { //pueden haber otras condiciones. Por ahora solo se listaran 10 por orden de id
 	stmt := `SELECT user_id, username, email, password_hash, created_at, updated_at 
 			FROM users
-			ORDER BY id DESC 
+			ORDER BY user_id DESC 
 			LIMIT 10
 			`
 

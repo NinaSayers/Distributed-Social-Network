@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"distnet/internal/models"
 )
@@ -56,8 +56,8 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("user_id"))
-
+	id, err := strconv.Atoi(r.PathValue("id"))
+	fmt.Println(id)
 	if err != nil || id < 1 {
 		app.badRequestResponse(w, r, err)
 		return
@@ -86,10 +86,10 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
+	// if r.URL.Path != "/" {
+	// 	app.notFound(w)
+	// 	return
+	// }
 	users, err := app.models.User.List()
 	if err != nil {
 		app.serverError(w, err)
@@ -112,9 +112,8 @@ func (app *application) ListUsersHandler(w http.ResponseWriter, r *http.Request)
 
 func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	userIDString := strings.TrimPrefix(r.URL.Path, "/users/")
-	userID, err := strconv.Atoi(userIDString)
-	if err != nil || userID <= 0 {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id <= 0 {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -126,7 +125,7 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	user.UserID = userID
+	user.UserID = id
 	err = app.models.User.Update(r.Context(), &user)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
@@ -146,14 +145,13 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	userIDString := strings.TrimPrefix(r.URL.Path, "/users/")
-	userID, err := strconv.Atoi(userIDString)
-	if err != nil || userID <= 0 {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id <= 0 {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	err = app.models.User.Delete(r.Context(), userID)
+	err = app.models.User.Delete(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -163,7 +161,6 @@ func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) // or http.StatusNoContent
 	json.NewEncoder(w).Encode(map[string]string{"message": "User deleted successfully"})
 
