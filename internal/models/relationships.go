@@ -58,7 +58,7 @@ func (m *RelationshipModel) UnfollowUser(relationshipID int) error {
    
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-	 return NewErrDatabaseOperationFailed(err)
+	 	return NewErrDatabaseOperationFailed(err)
 	}
 	if rowsAffected == 0 {
 	 	return ErrNoRecord 
