@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"distnet/internal/models"
 )
@@ -165,11 +166,78 @@ func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+
+	decoder := json.NewDecoder(r.Body)
+	var newMessage struct {
+	 	UserID  int    `json:"user_id"`
+	 	Content string `json:"content"`
+	}
+	err := decoder.Decode(&newMessage)
+	if err != nil {
+	 	app.badRequestResponse(w, r, fmt.Errorf("error al decodificar el JSON: %w", err))
+	 	return
+	}
+	defer r.Body.Close()
+
+	if newMessage.UserID == 0 || newMessage.Content == "" {
+	 	app.badRequestResponse(w, r, errors.New("user_id y content son requeridos"))
+	 	return
+	}
+	
+	messageID, err := app.models.Message.Create(newMessage.UserID, newMessage.Content)
+	if err != nil {
+	 	if errors.Is(err, models.ErrNoRecord) {
+	 	 	app.badRequestResponse(w, r, err)
+	 	} else {
+	  	app.serverError(w, err)
+	 	}
+	 	return
+	}
+	
+	createdMessage := models.Message{
+	 	MessageID: messageID,
+	 	UserID:    newMessage.UserID,
+	 	Content:   newMessage.Content,
+	 	CreatedAt: time.Now(),
+	 	UpdatedAt: time.Now(),
+	}
+	
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(createdMessage)
+	if err != nil {
+	 	app.serverError(w, models.NewErrDatabaseOperationFailed(err))
+	}
+	   
+	//w.Write([]byte("Getting users"))
 }
 func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	
+	messageID, err := strconv.Atoi(r.URL.Path[len("/messages/"):])
+	if err != nil {
+	 	app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
+	 return
+	}
+   
+	message, err := app.models.Message.Get(messageID)
+	if err != nil {
+	 	if errors.Is(err, models.ErrNoRecord) {
+	  	app.notFound(w)
+	 	} else {
+	  		app.serverError(w, err)
+	 	}
+	 	return
+	}
+   
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(message)
+	if err != nil {
+	 	app.serverError(w, err)
+	}
+	
+	//w.Write([]byte("Getting users"))
 }
+
 func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }

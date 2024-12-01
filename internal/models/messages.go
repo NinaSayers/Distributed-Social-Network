@@ -97,7 +97,7 @@ func (m *MessageModel) ListByUser(userID int64) ([]*Message, error) {
 	}
    
 	return messages, nil
-   }
+}
 
 func (m *MessageModel) Delete(messageID int64) error {
 
