@@ -164,91 +164,125 @@ func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request
 	//w.Write([]byte("Getting users"))
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
 
-	decoder := json.NewDecoder(r.Body)
-	var newMessage struct {
-	 	UserID  int    `json:"user_id"`
-	 	Content string `json:"content"`
+	var payload struct {
+		UserID  int    `json:"user_id"`
+		Content string `json:"content"`
 	}
-	err := decoder.Decode(&newMessage)
+
+	err := app.readJSON(w, r, &payload)
 	if err != nil {
-	 	app.badRequestResponse(w, r, fmt.Errorf("error al decodificar el JSON: %w", err))
-	 	return
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
 	}
+
 	defer r.Body.Close()
 
-	if newMessage.UserID == 0 || newMessage.Content == "" {
-	 	app.badRequestResponse(w, r, errors.New("user_id y content son requeridos"))
-	 	return
+	if payload.UserID == 0 || payload.Content == "" {
+		app.badRequestResponse(w, r, errors.New("user_id y content son requeridos"))
+		return
 	}
-	
-	messageID, err := app.models.Message.Create(newMessage.UserID, newMessage.Content)
+
+	messageID, err := app.models.Message.Create(payload.UserID, payload.Content)
 	if err != nil {
-	 	if errors.Is(err, models.ErrNoRecord) {
-	 	 	app.badRequestResponse(w, r, err)
-	 	} else {
-	  	app.serverError(w, err)
-	 	}
-	 	return
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
 	}
-	
+
 	createdMessage := models.Message{
-	 	MessageID: messageID,
-	 	UserID:    newMessage.UserID,
-	 	Content:   newMessage.Content,
-	 	CreatedAt: time.Now(),
-	 	UpdatedAt: time.Now(),
+		MessageID: messageID,
+		UserID:    payload.UserID,
+		Content:   payload.Content,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(createdMessage)
 	if err != nil {
-	 	app.serverError(w, models.NewErrDatabaseOperationFailed(err))
+		app.serverError(w, models.NewErrDatabaseOperationFailed(err))
 	}
-	   
+
 	//w.Write([]byte("Getting users"))
 }
 func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
-	
-	messageID, err := strconv.Atoi(r.URL.Path[len("/messages/"):])
+
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-	 	app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
-	 return
+		app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
+		return
 	}
-   
-	message, err := app.models.Message.Get(messageID)
+
+	message, err := app.models.Message.Get(id)
 	if err != nil {
-	 	if errors.Is(err, models.ErrNoRecord) {
-	  	app.notFound(w)
-	 	} else {
-	  		app.serverError(w, err)
-	 	}
-	 	return
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
 	}
-   
+
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(message)
 	if err != nil {
-	 	app.serverError(w, err)
+		app.serverError(w, err)
 	}
-	
+
 	//w.Write([]byte("Getting users"))
 }
 
 func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
+		return
+	}
+
+	users, err := app.models.Message.ListByUser(int64(id))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 }
 func (app *application) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id <= 0 {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = app.models.Message.Delete(int64(id))
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK) // or http.StatusNoContent
+	json.NewEncoder(w).Encode(map[string]string{"message": "Post deleted successfully"})
 }
 func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -262,7 +296,7 @@ func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Requ
 	w.Write([]byte("Getting users"))
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) RetweetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -282,7 +316,7 @@ func (app *application) GetUserStatsHandler(w http.ResponseWriter, r *http.Reque
 	w.Write([]byte("Getting users"))
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -293,7 +327,7 @@ func (app *application) ListSentMessagesHandler(w http.ResponseWriter, r *http.R
 	w.Write([]byte("Getting users"))
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
@@ -362,4 +396,3 @@ func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Reque
 	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
 	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
 }
-

@@ -1,9 +1,14 @@
 # Distributed-Social-Network
 The project consists of implementing a distributed social network for communication following the idea on which Twitter is based. Project of the Distributed Systems subject of the Computer Science career, Faculty of Mathematics and Computing (MATCOM), University of Havana.
+
 ## Requirements
 Run
 ```bash
 go mod download
+```
+Next, to run the project execute
+```bash
+go run ./cmd/api
 ```
 to get the necesary dependecies for this project to run succesfully.
 
