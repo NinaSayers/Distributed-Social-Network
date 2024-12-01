@@ -3,13 +3,15 @@ package models
 import "database/sql"
 
 type Models struct {
-	User *UserModel
-	Post *PostModel
+	User 		 *UserModel
+	Message 	 *MessageModel
+	Relationship *RelationshipModel
 }
 
 func NewModels(db *sql.DB) Models {
 	return Models{
-		User: &UserModel{DB: db},
-		Post: &PostModel{DB: db},
+		User: 		  &UserModel{DB: db},
+		Message: 	  &MessageModel{DB: db},
+		Relationship: &RelationshipModel{DB: db},
 	}
 }
