@@ -1,10 +1,10 @@
 FROM alpine
 
-# Instalar los paquetes necesarios, incluyendo iptables
-RUN apk update && apk add --no-cache iproute2 iputils iptables
+# Instala las herramientas necesarias para sysctl
+RUN apk add --no-cache procps
 
-# Habilitar el reenvío de IP de forma persistente
-RUN echo "net.ipv4.ip_forward=1" > /etc/sysctl.conf
+# Configura el reenvío de paquetes IP
+RUN echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 
-# Agregar un script para habilitar el reenvío de IP y configurar iptables al iniciar el contenedor
-CMD sysctl -p && /bin/sh
+# Usa un script para ejecutar el comando sysctl y mantener el contenedor vivo
+CMD sysctl -p && tail -f /dev/null

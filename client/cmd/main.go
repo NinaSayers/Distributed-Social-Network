@@ -14,7 +14,7 @@ var baseURL string
 func init() {
 	baseURL = os.Getenv("SERVER_URL")
 	if baseURL == "" {
-		baseURL = "http://localhost:4000"
+		baseURL = "http://10.0.11.2:4000"
 	}
 }
 

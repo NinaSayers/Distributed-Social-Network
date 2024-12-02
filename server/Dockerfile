@@ -19,9 +19,12 @@ WORKDIR /root/
 
 # Copia el binario desde la imagen de construcción
 COPY --from=builder /app/server .
+COPY startup.sh /root/startup.sh
+
+RUN chmod +x /root/startup.sh
 
 # Expone el puerto en el que el servidor escuchará
 EXPOSE 4000
 
 # Comando para ejecutar el binario
-CMD ["./server"]
+CMD ["sh", "-c","/root/startup.sh && ./server"]
