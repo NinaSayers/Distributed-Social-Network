@@ -9,7 +9,7 @@ COPY . .
 
 # Compila el binario
 RUN go mod download
-RUN go build -o server .
+RUN go build -o server ./cmd/api
 
 # Usa una imagen base más pequeña para ejecutar el binario
 FROM alpine:latest
@@ -24,4 +24,4 @@ COPY --from=builder /app/server .
 EXPOSE 4000
 
 # Comando para ejecutar el binario
-CMD ["./server/"]
+CMD ["./server"]

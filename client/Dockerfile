@@ -9,7 +9,7 @@ COPY . .
 
 # Compila el binario
 RUN go mod download
-RUN go build -o client ./client
+RUN go build -o client ./cmd
 
 # Usa una imagen base más pequeña para ejecutar el binario
 FROM alpine:latest
