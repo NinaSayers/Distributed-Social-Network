@@ -287,98 +287,103 @@ func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request
 	var payload struct {
 		FollowerID int `json:"follower_id"`
 		FolloweeID int `json:"followee_id"`
-	   }
-   
-	   err := app.readJSON(w, r, &payload)
-	   if err != nil {
-			app.errorResponse(w, r, http.StatusBadRequest, err.Error())
-			return
-	   }
-   
-	   defer r.Body.Close()
-   
-	   if payload.FollowerID == 0 || payload.FolloweeID == 0 {
-			app.badRequestResponse(w, r, errors.New("follower_id y followee_id son requeridos"))
-			return
-	   }
-   
-	   err = app.models.Relationship.FollowUser(payload.FollowerID, payload.FolloweeID)
-	   if err != nil {
-			if errors.Is(err, models.ErrNoRecord) { // Assuming ErrNoRecord is defined in your models package
-		 		app.badRequestResponse(w, r, err)
-			} else {
-		app.serverError(w, err)
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	if payload.FollowerID == 0 || payload.FolloweeID == 0 {
+		app.badRequestResponse(w, r, errors.New("follower_id y followee_id son requeridos"))
+		return
+	}
+
+	err = app.models.Relationship.FollowUser(payload.FollowerID, payload.FolloweeID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) { // Assuming ErrNoRecord is defined in your models package
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
 		}
 		return
 		// w.Write([]byte("Getting users"))
-	   }
+	}
 }
 func (app *application) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	var payload struct {
-		RelationshipID int `json:"relationship_id"`
-	   }
-	  
-	err := app.readJSON(w, r, &payload)
-	   if err != nil {
-			app.errorResponse(w, r, http.StatusBadRequest, err.Error())
-			return
-	   }
-	  
-	   defer r.Body.Close()
-	  
-	   if payload.RelationshipID == 0 {
-			app.badRequestResponse(w, r, errors.New("relationship_id is required"))
-			return
-	   }
-	  
-	   err = app.models.Relationship.UnfollowUser(payload.RelationshipID)
-	   	if err != nil {
-			if errors.Is(err, models.ErrNoRecord) {
-		 		app.badRequestResponse(w, r, err)
-			} else {
-		 		app.serverError(w, err)
-			}
+	followee_id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		app.badRequestResponse(w, r, err)
 		return
-	// w.Write([]byte("Getting users"))
+	}
+	var payload struct {
+		UserID int `json:"user_id"`
+	}
+
+	err = app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	if payload.UserID == 0 {
+		app.badRequestResponse(w, r, errors.New("relationship_id is required"))
+		return
+	}
+
+	err = app.models.Relationship.UnfollowUser(payload.UserID, followee_id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
 		}
+		return
+		// w.Write([]byte("Getting users"))
+	}
 }
 func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
 	if err != nil {
-	 	app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
-	 	return
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
+		return
 	}
-   
+
 	followers, err := app.models.Relationship.ListFollowers(userID)
 	if err != nil {
-	 	app.serverError(w, err)
-	 	return
+		app.serverError(w, err)
+		return
 	}
-   
+
 	err = json.NewEncoder(w).Encode(followers)
 	if err != nil {
-	 	app.serverError(w, err)
-	 	return
+		app.serverError(w, err)
+		return
 	}
 	//w.Write([]byte("Getting users"))
 }
 func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
 	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
 	if err != nil {
-	 	app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
-	 	return
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
+		return
 	}
-   
+
 	followers, err := app.models.Relationship.ListFollowing(userID)
 	if err != nil {
-	 	app.serverError(w, err)
-	 	return
+		app.serverError(w, err)
+		return
 	}
-   
+
 	err = json.NewEncoder(w).Encode(followers)
 	if err != nil {
-	 	app.serverError(w, err)
-	 	return
+		app.serverError(w, err)
+		return
 	}
 	//w.Write([]byte("Getting users"))
 }
