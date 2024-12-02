@@ -38,6 +38,17 @@ CREATE TABLE relationships (
     UNIQUE (follower_id, followee_id) -- Evitar duplicados
 );
 
+-- Crear tabla de retweets
+CREATE TABLE retweets (
+    retweet_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    message_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (message_id) REFERENCES messages(message_id) ON DELETE CASCADE,
+    UNIQUE (user_id, message_id) -- Un usuario no puede retweetear el mismo mensaje dos veces
+);
+
 -- Insertar datos de ejemplo en la tabla de usuarios
 INSERT INTO users (username, email, password_hash) VALUES
 ('alice', 'alice@example.com', 'hashed_password_1'),
@@ -56,7 +67,13 @@ INSERT INTO relationships (follower_id, followee_id) VALUES
 (2, 3), -- Bob sigue a Carol
 (3, 1); -- Carol sigue a Alice
 
+-- Insertar datos de ejemplo en la tabla de retweets (ejemplos)
+INSERT INTO retweets (user_id, message_id) VALUES
+(2,1), -- Bob retweetea el mensaje de Alice
+(3,2); -- Carol retweetea el mensaje de Bob
+
 -- Verificar datos insertados
 SELECT * FROM users;
 SELECT * FROM messages;
 SELECT * FROM relationships;
+SELECT * FROM retweets;
