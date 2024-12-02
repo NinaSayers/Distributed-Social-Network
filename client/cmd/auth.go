@@ -85,6 +85,6 @@ func login() (*Client, error) {
 	var response Client
 	err = json.Unmarshal(body, &response)
 
-	fmt.Println("Bienvenido %s", response.UserName)
+	fmt.Printf("Bienvenido %s \n", response.UserName)
 	return &response, nil
 }

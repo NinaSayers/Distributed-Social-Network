@@ -16,6 +16,32 @@ type Tweet struct {
 	TweetId   string    `json:"message_id"`
 }
 
+func listUsers() {
+	resp, err := http.Get(baseURL + "/users")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	var followers []User
+	err = json.Unmarshal(body, &followers)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	for _, follower := range followers {
+		fmt.Printf("ID: %s, Username: %s, Email: %s\n", follower.UserID, follower.UserName, follower.Email)
+	}
+}
+
 func getUser() {
 	var id string
 	fmt.Print("ID de usuario: ")
@@ -46,18 +72,6 @@ func displayProfileHeader(user User) {
 	fmt.Println(strings.Repeat("=", 50))
 }
 
-func displayPosts(tweets []Tweet) {
-	fmt.Println("Posts:")
-	for i, tweet := range tweets {
-		if i == 5 {
-			break
-		}
-		fmt.Printf("\n%s: %s\n", tweet.UserId, tweet.Content)
-		fmt.Printf("  📅 %s\n", tweet.CreatedAt)
-	}
-	fmt.Println(strings.Repeat("-", 50))
-}
-
 func listFollowers() {
 	var id string
 	fmt.Print("ID de usuario: ")
@@ -75,8 +89,21 @@ func listFollowers() {
 		fmt.Println("Error:", err)
 		return
 	}
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
 
-	fmt.Println(string(body))
+	var followers []User
+	err = json.Unmarshal(body, &followers)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	for _, follower := range followers {
+		fmt.Printf("ID: %s, Username: %s, Email: %s\n", follower.UserID, follower.UserName, follower.Email)
+	}
 }
 
 func listFollowing() {
@@ -97,5 +124,14 @@ func listFollowing() {
 		return
 	}
 
-	fmt.Println(string(body))
+	var followings []User
+	err = json.Unmarshal(body, &followings)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	for _, followings := range followings {
+		fmt.Printf("ID: %s, Username: %s, Email: %s\n", followings.UserID, followings.UserName, followings.Email)
+	}
 }

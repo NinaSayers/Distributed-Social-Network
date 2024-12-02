@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 var baseURL string
@@ -22,19 +23,23 @@ func main() {
 	var client *Client = nil
 	for {
 		if client != nil {
-			fmt.Println("Hola %s ! Seleccione una opción: ", client.UserName)
+			fmt.Printf("Hola %s ! Seleccione una opción: \n", client.UserName)
 			fmt.Println("1. Listar usuarios")
 			fmt.Println("3. Obtener usuario")
 			fmt.Println("4. Actualizar usuario")
 			fmt.Println("5. Eliminar usuario")
+
 			fmt.Println("6. Seguir usuario")
 			fmt.Println("7. Dejar de seguir usuario")
+
 			fmt.Println("8. Listar seguidores")
 			fmt.Println("9. Listar seguidos")
+
 			fmt.Println("10. Crear mensaje")
 			fmt.Println("11. Obtener mensaje")
 			fmt.Println("12. Listar mensajes de usuario")
 			fmt.Println("13. Eliminar mensaje")
+
 			fmt.Println("15. Salir")
 
 			var option int
@@ -52,15 +57,15 @@ func main() {
 			case 5:
 				deleteUser()
 			case 6:
-				followUser()
+				followUser(client)
 			case 7:
-				unfollowUser()
+				unfollowUser(client)
 			case 8:
 				listFollowers()
 			case 9:
 				listFollowing()
 			case 10:
-				createMessage()
+				createMessage(client)
 			case 11:
 				getMessage()
 			case 12:
@@ -86,11 +91,9 @@ func main() {
 			switch option {
 			case 1:
 				c, err := login()
-				if err != nil {
-					fmt.Println(err)
-					continue
+				if err == nil {
+					client = c
 				}
-				client = c
 			case 2:
 				signUp()
 			case 3:
@@ -102,23 +105,6 @@ func main() {
 		}
 
 	}
-}
-
-func listUsers() {
-	resp, err := http.Get(baseURL + "/users")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
-	fmt.Println(string(body))
 }
 
 func updateUser() {
@@ -189,12 +175,27 @@ func deleteUser() {
 	fmt.Println(string(body))
 }
 
-func followUser() {
+func followUser(client *Client) {
 	var id string
 	fmt.Print("ID de usuario a seguir: ")
 	fmt.Scan(&id)
 
-	resp, err := http.Post(baseURL+"/users/"+id+"/follow", "application/json", nil)
+	var payload struct {
+		FollowerID int `json:"follower_id"`
+		FolloweeID int `json:"followee_id"`
+	}
+
+	payload.FollowerID = client.UserID
+	followeeID, err := strconv.Atoi(id)
+	payload.FolloweeID = followeeID
+
+	if err != nil {
+		fmt.Println("Error: ID de usuario inválido")
+		return
+	}
+	jsonData, err := json.Marshal(payload)
+
+	resp, err := http.Post(baseURL+"/users/"+id+"/follow", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -210,19 +211,23 @@ func followUser() {
 	fmt.Println(string(body))
 }
 
-func unfollowUser() {
+func unfollowUser(client *Client) {
 	var id string
 	fmt.Print("ID de usuario a dejar de seguir: ")
 	fmt.Scan(&id)
-
-	req, err := http.NewRequest(http.MethodDelete, baseURL+"/users/"+id+"/follow", nil)
+	var paylaod struct {
+		UserId int `json:"user_id"`
+	}
+	paylaod.UserId = client.UserID
+	jsonData, err := json.Marshal(paylaod)
+	req, err := http.NewRequest(http.MethodDelete, baseURL+"/users/"+id+"/follow", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -238,12 +243,17 @@ func unfollowUser() {
 	fmt.Println(string(body))
 }
 
-func createMessage() {
+func createMessage(client *Client) {
 	var content string
 	fmt.Print("Contenido del mensaje: ")
 	fmt.Scan(&content)
 
-	message := map[string]string{"content": content}
+	var message struct {
+		Content string `json:"content"`
+		UserId  int    `json:"user_id"`
+	}
+	message.Content = content
+	message.UserId = client.UserID
 	jsonData, err := json.Marshal(message)
 	if err != nil {
 		fmt.Println("Error:", err)
