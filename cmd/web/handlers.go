@@ -11,13 +11,8 @@ import (
 	"distnet/internal/models"
 )
 
-func (app *application) feed(w http.ResponseWriter, r *http.Request) { // creo que esto hay que borrarlo
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
-
-	w.Write([]byte("Hello from Distnet"))
+func (app *application) feed(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting feed"))
 }
 
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
