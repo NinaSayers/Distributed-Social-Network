@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"distnet/internal/models"
 )
@@ -17,10 +18,6 @@ func (app *application) feed(w http.ResponseWriter, r *http.Request) { // creo q
 	}
 
 	w.Write([]byte("Hello from Distnet"))
-}
-
-func (app *application) createPost(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Creating a post"))
 }
 
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -167,34 +164,226 @@ func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request
 	//w.Write([]byte("Getting users"))
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////
-func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+// ///////////////////////////////////////////////////////////////////////////////////////////
+func (app *application) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
+
+	var payload struct {
+		UserID  int    `json:"user_id"`
+		Content string `json:"content"`
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	if payload.UserID == 0 || payload.Content == "" {
+		app.badRequestResponse(w, r, errors.New("user_id y content son requeridos"))
+		return
+	}
+
+	messageID, err := app.models.Message.Create(payload.UserID, payload.Content)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	createdMessage := models.Message{
+		MessageID: messageID,
+		UserID:    payload.UserID,
+		Content:   payload.Content,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(createdMessage)
+	if err != nil {
+		app.serverError(w, models.NewErrDatabaseOperationFailed(err))
+	}
+
+	//w.Write([]byte("Getting users"))
 }
-func (app *application) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
+
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
+		return
+	}
+
+	message, err := app.models.Message.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(message)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	//w.Write([]byte("Getting users"))
 }
-func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+
+func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
+		return
+	}
+
+	users, err := app.models.Message.ListByUser(int64(id))
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 }
-func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) CreateTweetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) GetTweetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
-func (app *application) ListUserTweetsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+func (app *application) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id <= 0 {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	err = app.models.Message.Delete(int64(id))
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK) // or http.StatusNoContent
+	json.NewEncoder(w).Encode(map[string]string{"message": "Post deleted successfully"})
 }
 func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
-func (app *application) DeleteTweetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+
+// ////////////////////////////////////////////////////////////////////////////////////////////
+func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		FollowerID int `json:"follower_id"`
+		FolloweeID int `json:"followee_id"`
+	   }
+   
+	   err := app.readJSON(w, r, &payload)
+	   if err != nil {
+			app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+			return
+	   }
+   
+	   defer r.Body.Close()
+   
+	   if payload.FollowerID == 0 || payload.FolloweeID == 0 {
+			app.badRequestResponse(w, r, errors.New("follower_id y followee_id son requeridos"))
+			return
+	   }
+   
+	   err = app.models.Relationship.FollowUser(payload.FollowerID, payload.FolloweeID)
+	   if err != nil {
+			if errors.Is(err, models.ErrNoRecord) { // Assuming ErrNoRecord is defined in your models package
+		 		app.badRequestResponse(w, r, err)
+			} else {
+		app.serverError(w, err)
+		}
+		return
+		// w.Write([]byte("Getting users"))
+	   }
 }
+func (app *application) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
+	var payload struct {
+		RelationshipID int `json:"relationship_id"`
+	   }
+	  
+	err := app.readJSON(w, r, &payload)
+	   if err != nil {
+			app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+			return
+	   }
+	  
+	   defer r.Body.Close()
+	  
+	   if payload.RelationshipID == 0 {
+			app.badRequestResponse(w, r, errors.New("relationship_id is required"))
+			return
+	   }
+	  
+	   err = app.models.Relationship.UnfollowUser(payload.RelationshipID)
+	   	if err != nil {
+			if errors.Is(err, models.ErrNoRecord) {
+		 		app.badRequestResponse(w, r, err)
+			} else {
+		 		app.serverError(w, err)
+			}
+		return
+	// w.Write([]byte("Getting users"))
+		}
+}
+func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
+	if err != nil {
+	 	app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
+	 	return
+	}
+   
+	followers, err := app.models.Relationship.ListFollowers(userID)
+	if err != nil {
+	 	app.serverError(w, err)
+	 	return
+	}
+   
+	err = json.NewEncoder(w).Encode(followers)
+	if err != nil {
+	 	app.serverError(w, err)
+	 	return
+	}
+	//w.Write([]byte("Getting users"))
+}
+func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
+	if err != nil {
+	 	app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
+	 	return
+	}
+   
+	followers, err := app.models.Relationship.ListFollowing(userID)
+	if err != nil {
+	 	app.serverError(w, err)
+	 	return
+	}
+   
+	err = json.NewEncoder(w).Encode(followers)
+	if err != nil {
+	 	app.serverError(w, err)
+	 	return
+	}
+	//w.Write([]byte("Getting users"))
+}
+
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) RetweetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -210,6 +399,11 @@ func (app *application) UnfavoriteTweetHandler(w http.ResponseWriter, r *http.Re
 func (app *application) ListNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
+func (app *application) GetUserStatsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting users"))
+}
+
+// ////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) SendMessageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
@@ -219,6 +413,8 @@ func (app *application) ListReceivedMessagesHandler(w http.ResponseWriter, r *ht
 func (app *application) ListSentMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
+
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
@@ -237,13 +433,25 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := app.models.User.Authenticate(payload.Email, payload.Password)
-	app.writeJSON(w, http.StatusOK, id, nil)
+	user, err := app.models.User.Authenticate(payload.Email, payload.Password)
+	if err != nil {
+		app.invalidCredentialsResponse(w, r) //arreglar esto con el error correspondiente
+		return
+	}
+
+	token, err := GenerateJWT(user.Username)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.writeJSON(w, http.StatusOK, map[string]interface{}{"token": token, "user": user}, nil)
 
 }
-func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
-}
+
+// func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+// 	w.Write([]byte("Getting users"))
+// }
+
 func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload struct {
@@ -274,7 +482,4 @@ func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Reque
 
 	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
 	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
-}
-func (app *application) GetUserStatsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func secureHeaders(next http.Handler) http.Handler {
@@ -34,6 +36,28 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 				app.serverError(w, fmt.Errorf("%s", err))
 			}
 		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (app *application) JWTMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tokenString := r.Header.Get("Authorization")
+		if tokenString == "" {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
+		claims := &Claims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+			return jwtKey, nil
+		})
+
+		if err != nil || !token.Valid {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }

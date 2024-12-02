@@ -44,31 +44,30 @@ func (m *UserModel) Create(username, email, password string) (int, error) {
 	return int(id), nil
 }
 
-func (m *UserModel) Authenticate(email, password string) (int, error) {
+func (m *UserModel) Authenticate(email string, password string) (*User, error) {
 
-	var id int
-	var hashedPassword []byte
+	u := &User{}
 
-	stmt := "SELECT id, hashed_password FROM users WHERE email = ?"
-	err := m.DB.QueryRow(stmt, email).Scan(&id, &hashedPassword)
+	stmt := "SELECT user_id, username, email, password_hash, created_at, updated_at  FROM users WHERE email = ?"
+	err := m.DB.QueryRow(stmt, email).Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return 0, ErrInvalidCredentials
+			return nil, ErrInvalidCredentials
 		} else {
-			return 0, ErrInvalidCredentials
+			return nil, ErrInvalidCredentials
 		}
 	}
 
-	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return 0, ErrInvalidCredentials
+			return nil, ErrInvalidCredentials
 		} else {
-			return 0, err
+			return nil, err
 		}
 	}
 
-	return int(id), nil
+	return u, nil
 }
 
 func (m *UserModel) Get(user_id int) (*User, error) {
