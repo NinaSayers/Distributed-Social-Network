@@ -2,17 +2,62 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"io/ioutil"
+	"net/http"
 )
 
-func displayPosts(tweets []Tweet) {
-	fmt.Println("Posts:")
-	for i, tweet := range tweets {
-		if i == 5 {
-			break
-		}
-		fmt.Printf("\n%s: %s\n", tweet.UserId, tweet.Content)
-		fmt.Printf("  📅 %s\n", tweet.CreatedAt)
+func (app *Application) createMessageComponent() {
+	var content string
+	fmt.Print("Contenido del mensaje: ")
+	fmt.Scan(&content)
+
+	message, err := app.service.CreateMessage(app.user.UserID, content)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
 	}
-	fmt.Println(strings.Repeat("-", 50))
+
+	displayPost(*message, *app.user)
+}
+
+func (app *Application) getMessage() {
+	var id string
+	fmt.Print("ID del mensaje: ")
+	fmt.Scan(&id)
+
+	message, err := app.service.GetMessage(id)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	displayPosts([]Message{*message})
+}
+
+func deleteMessage() {
+	var id string
+	fmt.Print("ID del mensaje: ")
+	fmt.Scan(&id)
+
+	req, err := http.NewRequest(http.MethodDelete, baseURL+"/messages/"+id, nil)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println(string(body))
 }

@@ -389,70 +389,70 @@ func (app *application) RetweetHandler(w http.ResponseWriter, r *http.Request) {
 		UserID    int `json:"user_id"`
 		MessageID int `json:"message_id"`
 	}
-	  
+
 	err := app.readJSON(w, r, &payload)
 	if err != nil {
 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
 		return
 	}
 	defer r.Body.Close()
-	
+
 	if payload.UserID == 0 || payload.MessageID == 0 {
 		app.badRequestResponse(w, r, errors.New("user_id and message_id are required"))
 		return
 	}
-	
+
 	err = app.models.Retweet.CreateRetweet(payload.UserID, payload.MessageID)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) || errors.Is(err, models.ErrRelationshipExists) {
-	 	app.badRequestResponse(w, r, err)
+			app.badRequestResponse(w, r, err)
 		} else {
-	 		app.serverError(w, err)
+			app.serverError(w, err)
 		}
 		return
 	}
-	
+
 	w.WriteHeader(http.StatusCreated) // Indicate successful creation
 
 	//w.Write([]byte("Getting users"))
 }
 func (app *application) UndoRetweetHandler(w http.ResponseWriter, r *http.Request) {
 	messageID, err := strconv.Atoi(r.URL.Query().Get("message_id"))
- 	if err != nil {
- 	 	app.badRequestResponse(w, r, errors.New("invalid message_id"))
- 	 	return
- 	}
- 	var payload struct {
- 	 	UserID int `json:"user_id"`
- 	}
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New("invalid message_id"))
+		return
+	}
+	var payload struct {
+		UserID int `json:"user_id"`
+	}
 
- 	err = app.readJSON(w, r, &payload)
- 	if err != nil {
- 	 	app.errorResponse(w, r, http.StatusBadRequest, err.Error())
- 	 	return
- 	}
- 	defer r.Body.Close()
+	err = app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
 
- 	if payload.UserID == 0 {
- 	 	app.badRequestResponse(w, r, errors.New("user_id is required"))
- 	 	return
- 	}
+	if payload.UserID == 0 {
+		app.badRequestResponse(w, r, errors.New("user_id is required"))
+		return
+	}
 
- 	err = app.models.Retweet.UndoRetweet(payload.UserID, messageID)
- 	if err != nil {
- 	 	if errors.Is(err, models.ErrNoRecord) {
- 	  	app.badRequestResponse(w, r, err)
- 	 	} else {
- 	  		app.serverError(w, err)
- 	 	}
- 	 	return
- 	}
+	err = app.models.Retweet.UndoRetweet(payload.UserID, messageID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
 
- 	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 	//w.Write([]byte("Getting users"))
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////////
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) FavoriteTweetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }
