@@ -10,7 +10,7 @@ var baseURL string
 func init() {
 	baseURL = os.Getenv("SERVER_URL")
 	if baseURL == "" {
-		baseURL = "http://10.0.11.2:4000"
+		baseURL = "http://localhost:4000"
 	}
 }
 
@@ -53,22 +53,22 @@ func main() {
 			switch option {
 			case 1:
 				app.showProfile()
+			case 2:
+				app.followUser()
 			case 3:
-				// updateUser()
+				app.unfollowUser()
 			case 4:
+				app.listFollowers()
 
 				//
 			case 5:
-				// followUser(client)
+				app.listFollowing()
 			case 6:
-				// unfollowUser(client)
 				app.createMessageComponent()
 
 			case 7:
 				app.getMessage()
-				// listFollowers()
 			case 8:
-				// listFollowing()
 				deleteMessage()
 
 			case 9:
@@ -83,6 +83,9 @@ func main() {
 			default:
 				fmt.Println("Opción no válida")
 			}
+
+			pressKeyToContinue()
+
 		} else {
 			fmt.Println("Seleccione una opción:")
 			fmt.Println("1. Login")

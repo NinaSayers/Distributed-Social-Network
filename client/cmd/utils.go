@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -29,8 +30,8 @@ func displayPosts(messages []Message) {
 		if i == 5 {
 			break
 		}
-		fmt.Printf("\n%s: %s\n", message.UserID, message.Content)
-		fmt.Printf("  📅 %s\n", message.CreatedAt)
+		fmt.Printf("\n%d: %s\n", message.UserID, message.Content)
+		fmt.Printf("  📅 %s  🆔 %d\n ", message.CreatedAt, message.MessageID)
 	}
 	fmt.Println(strings.Repeat("-", 50))
 }
@@ -53,7 +54,7 @@ func displayRepost(message Message, reposter User, original User) {
 
 func displayProfileHeader(user User) {
 	fmt.Println(strings.Repeat("=", 50))
-	fmt.Printf("  %s (%s)\n", user.UserName, user.Email)
+	fmt.Printf("ID: %d  %s (%s)\n", user.UserID, user.UserName, user.Email)
 	fmt.Printf("  🗓️  Joined %s\n", user.CreatedAt.Local())
 	// fmt.Printf("  📊 %d Following   👥 %d Followers\n", user.Following, user.Followers)
 	fmt.Println(strings.Repeat("=", 50))
@@ -79,4 +80,14 @@ func displayUsers(users []User) {
 func displayProfile(user User, messages []Message) {
 	displayProfileHeader(user)
 	displayPosts(messages)
+}
+
+func pressKeyToContinue() {
+	fmt.Println("Presiona cualquier tecla para continuar...")
+	reader := bufio.NewReader(os.Stdin)
+	_, err := reader.ReadByte()
+	if err != nil {
+		fmt.Println("Error reading input:", err)
+		return
+	}
 }

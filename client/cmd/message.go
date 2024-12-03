@@ -21,7 +21,7 @@ func (app *Application) createMessageComponent() {
 }
 
 func (app *Application) getMessage() {
-	var id string
+	var id int
 	fmt.Print("ID del mensaje: ")
 	fmt.Scan(&id)
 

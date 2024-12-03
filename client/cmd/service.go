@@ -214,7 +214,7 @@ func (s *Service) FollowUser(followerID, followeeID int) error {
 	}
 	body, _ := json.Marshal(payload)
 
-	resp, err := s.client.Post(baseURL+"/follow", "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(baseURL+"/users/"+strconv.Itoa(followeeID)+"/follow", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
@@ -231,8 +231,13 @@ func (s *Service) UnfollowUser(userID, followeeID int) error {
 		"user_id": userID,
 	}
 	body, _ := json.Marshal(payload)
+	req, err := http.NewRequest(http.MethodDelete, baseURL+"/users/"+strconv.Itoa(followeeID)+"/follow", bytes.NewBuffer(body))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
 
-	resp, err := s.client.Post(baseURL+"/users/"+strconv.Itoa(followeeID)+"/unfollow", "application/json", bytes.NewBuffer(body))
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
@@ -244,8 +249,54 @@ func (s *Service) UnfollowUser(userID, followeeID int) error {
 	return nil
 }
 
-func (s *Service) GetMessage(id string) (*Message, error) {
-	resp, err := s.client.Get(baseURL + "/messages/" + id)
+func (s *Service) ListFollowers(user_id int) ([]User, error) {
+	var id string
+	fmt.Print("ID de usuario: ")
+	fmt.Scan(&id)
+
+	resp, err := http.Get(baseURL + "/users/" + strconv.Itoa(user_id) + "/followers")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to retrieve users: status %d", resp.StatusCode)
+	}
+
+	var users []User
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	return users, nil
+
+}
+
+func (s *Service) ListFollowing(user_id int) ([]User, error) {
+	var id string
+	fmt.Print("ID de usuario: ")
+	fmt.Scan(&id)
+
+	resp, err := http.Get(baseURL + "/users/" + strconv.Itoa(user_id) + "/following")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to retrieve users: status %d", resp.StatusCode)
+	}
+
+	var users []User
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	return users, nil
+
+}
+func (s *Service) GetMessage(id int) (*Message, error) {
+	id_string := strconv.Itoa(id)
+	resp, err := s.client.Get(baseURL + "/messages/" + id_string)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
