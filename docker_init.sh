@@ -39,14 +39,7 @@ docker run -d --name server_distnet \
 
 # Iniciar contenedor del cliente
 echo "Iniciando contenedor del cliente..."
-docker run -d --name client1 \
-  --network clients_net --ip 10.0.10.2 \
-  -e SERVER_URL=http://10.0.11.2:4000 \
-  -p 3000:3000 \
-  --cap-add NET_ADMIN \
-  --restart unless-stopped \
-  --privileged \
-  cliente:latest
+docker run -d --name client1 --network clients_net --ip 10.0.10.2 -e SERVER_URL=http://10.0.11.2:4000 -p 3000:3000  --cap-add NET_ADMIN  --restart unless-stopped  --privileged cliente:latest
 
 # Iniciar contenedor del router
 echo "Iniciando contenedor del router..."
