@@ -33,7 +33,7 @@ func main() {
 	var cfg config
 
 	// flag.StringVar(&cfg.db.dsn, "db-dsn", "user:password@/distnetdb?parseTime=true", "MySQL DSN")
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "user:password@tcp(10.0.11.100:3306)/distnetdb?parseTime=true", "MySQL DSN")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "user:password@tcp(10.0.11.100:3306)/distnetdb?parseTime=true", "MySQL DSN") //comentar esta linea para probar client sin levantar contenedor de client
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.Parse()
