@@ -273,16 +273,13 @@ func (s *Service) ListFollowers(user_id int) ([]User, error) {
 }
 
 func (s *Service) ListFollowing(user_id int) ([]User, error) {
-	var id string
-	fmt.Print("ID de usuario: ")
-	fmt.Scan(&id)
-
+	
 	resp, err := http.Get(baseURL + "/users/" + strconv.Itoa(user_id) + "/following")
 	if err != nil {
-		fmt.Println("Error:", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to retrieve users: status %d", resp.StatusCode)
 	}
