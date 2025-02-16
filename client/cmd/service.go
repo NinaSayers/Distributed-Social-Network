@@ -159,6 +159,30 @@ func (s *Service) Login(email, password string) (*Client, error) {
 	return &response, nil
 }
 
+// func (s *Service) Logout() error {
+//     req, err := http.NewRequest(http.MethodPost, baseURL+"/auth/logout", nil)
+//     if err != nil {
+//         return fmt.Errorf("error creating logout request: %w", err)
+//     }
+
+//     // Si estás usando un token JWT, agrégalo al header de la solicitud.
+//     if s.token != "" {
+//         req.Header.Set("Authorization", "Bearer "+s.token)
+//     }
+
+//     client := &http.Client{}
+//     resp, err := client.Do(req)
+//     if err != nil {
+//         return fmt.Errorf("error sending logout request: %w", err)
+//     }
+//     defer resp.Body.Close()
+
+//     if resp.StatusCode != http.StatusOK {
+//         return fmt.Errorf("logout failed with status code: %d", resp.StatusCode)
+//     }
+
+//     return nil
+// }
 ////////////////////
 
 // CreateMessage sends a message for a user

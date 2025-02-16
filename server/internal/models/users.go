@@ -161,32 +161,52 @@ func (m *UserModel) Update(ctx context.Context, user *User) error {
 }
 
 func (m *UserModel) Delete(ctx context.Context, userID int) error {
-	query := `
- 			DELETE FROM users
- 			WHERE user_id = ?
-			`
-	stmt, err := m.DB.PrepareContext(ctx, query)
-	if err != nil {
-		return fmt.Errorf("error preparing delete statement: %w", err)
-	}
+    // Iniciar una transacción
+    tx, err := m.DB.BeginTx(ctx, nil)
+    if err != nil {
+        return fmt.Errorf("error starting transaction: %w", err)
+    }
+    defer tx.Rollback() // Rollback en caso de error
 
-	defer stmt.Close()
+    // Eliminar registros dependientes (por ejemplo, mensajes y seguidores)
+    _, err = tx.ExecContext(ctx, `
+        DELETE FROM messages WHERE user_id = ?
+    `, userID)
+    if err != nil {
+        return fmt.Errorf("error deleting dependent messages: %w", err)
+    }
 
-	result, err := stmt.ExecContext(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("error executing delete statement: %w", err)
-	}
+    _, err = tx.ExecContext(ctx, `
+        DELETE FROM followers WHERE follower_id = ? OR followed_id = ?
+    `, userID, userID)
+    if err != nil {
+        return fmt.Errorf("error deleting dependent followers: %w", err)
+    }
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("error getting rows affected: %w", err)
-	}
+    // Eliminar el usuario
+    result, err := tx.ExecContext(ctx, `
+        DELETE FROM users WHERE user_id = ?
+    `, userID)
+    if err != nil {
+        return fmt.Errorf("error deleting user: %w", err)
+    }
 
-	if rowsAffected == 0 {
-		return errors.New("user not found") // or use your custom ErrNoRecord if defined
-	}
+    // Verificar si se eliminó algún registro
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        return fmt.Errorf("error getting rows affected: %w", err)
+    }
 
-	return nil
+    if rowsAffected == 0 {
+        return ErrNoRecord
+    }
+
+    // Confirmar la transacción
+    if err := tx.Commit(); err != nil {
+        return fmt.Errorf("error committing transaction: %w", err)
+    }
+
+    return nil
 }
 
 func (m UserModel) GetByEmail(email string) (*User, error) {

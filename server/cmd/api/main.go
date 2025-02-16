@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"distnet/internal/models"
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/models"
 	"flag"
 	"fmt"
 	"log"

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"distnet/internal/models"
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/models"
 )
 
 func (app *application) feed(w http.ResponseWriter, r *http.Request) {
@@ -136,27 +136,27 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+    // Obtener el ID del usuario desde la URL
+    id, err := strconv.Atoi(r.PathValue("id"))
+    if err != nil || id <= 0 {
+        app.badRequestResponse(w, r, err)
+        return
+    }
 
-	id, err := strconv.Atoi(r.PathValue("id"))
-	if err != nil || id <= 0 {
-		app.badRequestResponse(w, r, err)
-		return
-	}
+    // Eliminar el usuario
+    err = app.models.User.Delete(r.Context(), id)
+    if err != nil {
+        if errors.Is(err, models.ErrNoRecord) {
+            app.notFound(w)
+        } else {
+            app.serverError(w, err)
+        }
+        return
+    }
 
-	err = app.models.User.Delete(r.Context(), id)
-	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
-		} else {
-			app.serverError(w, err)
-		}
-		return
-	}
-
-	w.WriteHeader(http.StatusOK) // or http.StatusNoContent
-	json.NewEncoder(w).Encode(map[string]string{"message": "User deleted successfully"})
-
-	//w.Write([]byte("Getting users"))
+    // Respuesta exitosa
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(map[string]string{"message": "User deleted successfully"})
 }
 
 // ///////////////////////////////////////////////////////////////////////////////////////////
@@ -233,7 +233,6 @@ func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request
 
 	//w.Write([]byte("Getting users"))
 }
-
 func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -271,7 +270,10 @@ func (app *application) DeleteMessageHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.WriteHeader(http.StatusOK) // or http.StatusNoContent
-	json.NewEncoder(w).Encode(map[string]string{"message": "Post deleted successfully"})
+	response := map[string]string{
+        "message": fmt.Sprintf("El mensaje ha sido eliminado correctamente."),
+    }
+	json.NewEncoder(w).Encode(response)
 }
 func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
@@ -511,9 +513,10 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-// 	w.Write([]byte("Getting users"))
-// }
+func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+    // Aquí podrías agregar lógica adicional, como invalidar el token si es necesario.
+    app.writeJSON(w, http.StatusOK, map[string]string{"message": "Logged out successfully"}, nil)
+}
 
 func (app *application) RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 

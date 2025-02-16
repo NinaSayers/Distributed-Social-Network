@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"bufio"
 	"fmt"
 	"io/ioutil"
@@ -47,30 +48,47 @@ func (app *Application) getMessage() {
 	displayPosts([]Message{*message})
 }
 
+// Estructura para decodificar la respuesta JSON
+type DeleteMessageResponse struct {
+    Message string `json:"message"`
+}
+
 func deleteMessage() {
-	var id string
-	fmt.Print("ID del mensaje: ")
-	fmt.Scan(&id)
+    var id string
+    fmt.Print("ID del mensaje: ")
+    fmt.Scan(&id)
 
-	req, err := http.NewRequest(http.MethodDelete, baseURL+"/messages/"+id, nil)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
+    // Crear la solicitud HTTP DELETE
+    req, err := http.NewRequest(http.MethodDelete, baseURL+"/messages/"+id, nil)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	defer resp.Body.Close()
+    // Enviar la solicitud
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
+    // Leer la respuesta del servidor
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
 
-	fmt.Println(string(body))
+    // Decodificar la respuesta JSON
+    var response DeleteMessageResponse
+    err = json.Unmarshal(body, &response)
+    if err != nil {
+        fmt.Println("Error decodificando JSON:", err)
+        return
+    }
+
+    // Mostrar solo el mensaje
+    fmt.Println(response.Message)
 }

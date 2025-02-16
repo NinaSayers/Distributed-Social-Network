@@ -44,6 +44,7 @@ func main() {
 			fmt.Println("9. Ver mi perfil")
 			fmt.Println("10. Actualizar mi perfil")
 			fmt.Println("11. Eliminar mi cuenta")
+			//fmt.Println("12. Cerrar sesión") // Nueva opción
 
 			fmt.Println("0. Salir")
 
@@ -78,7 +79,12 @@ func main() {
 			case 11:
 				app.deleteUser()
 
+			// case 12:
+			// 	logoutComponent() // Cerrar sesión
+			// 	return
+
 			case 0:
+				fmt.Println("Saliendo...")
 				os.Exit(0)
 			default:
 				fmt.Println("Opción no válida")
