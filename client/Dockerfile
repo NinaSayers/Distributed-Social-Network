@@ -19,9 +19,12 @@ WORKDIR /root/
 
 # Copia el binario desde la imagen de construcción
 COPY --from=builder /app/client .
+COPY startup.sh /root/startup.sh
 
 # Establece la variable de entorno
-ENV SERVER_URL=http://app:4000
+ENV SERVER_URL=http://10.0.11.2:4000
 
 # Comando para ejecutar el binario
-CMD ["./client"]
+RUN chmod +x /root/startup.sh
+
+CMD ["sh", "-c", "/root/startup.sh && tail -f /dev/null"]

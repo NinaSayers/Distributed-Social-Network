@@ -72,72 +72,82 @@ func (m *RelationshipModel) UnfollowUser(userId int, followeeId int) error {
 	return nil
 }
 
-func (m *RelationshipModel) ListFollowers(userID int) ([]*Relationship, error) {
+func (m *RelationshipModel) ListFollowers(userID int) ([]*User, error) {
 
 	err := CheckUserExistenceAsFollowee(userID, m.DB)
 
 	if err != nil {
 		if errors.Is(err, ErrNoRecord) {
-			return []*Relationship{}, nil
+			return []*User{}, nil
 		}
 		return nil, err
 	}
 
-	stmt := `SELECT follower_id, FROM relationships WHERE followee_id = ?`
+	stmt := `
+		SELECT u.user_id, u.username, u.email
+		FROM users u
+		JOIN relationships r ON u.user_id = r.follower_id
+		WHERE r.followee_id = ?
+		`
 	rows, err := m.DB.Query(stmt, userID)
 	if err != nil {
 		return nil, NewErrDatabaseOperationFailed(err)
 	}
 	defer rows.Close()
 
-	relationships := []*Relationship{}
+	users := []*User{}
 	for rows.Next() {
-		r := &Relationship{}
-		err := rows.Scan(&r.RelationshipID, &r.FollowerID, &r.FolloweeID, &r.CreatedAt)
+		u := &User{}
+		err := rows.Scan(&u.UserID, &u.Username, &u.Email)
 		if err != nil {
 			return nil, NewErrDatabaseOperationFailed(err)
 		}
-		relationships = append(relationships, r)
+		users = append(users, u)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, NewErrDatabaseOperationFailed(err)
 	}
 
-	return relationships, nil
+	return users, nil
 }
 
-func (m *RelationshipModel) ListFollowing(userID int) ([]*Relationship, error) {
+func (m *RelationshipModel) ListFollowing(userID int) ([]*User, error) {
 
 	err := CheckUserExistenceAsFollower(userID, m.DB)
-
 	if err != nil {
 		if errors.Is(err, ErrNoRecord) {
-			return []*Relationship{}, nil
+			return []*User{}, nil
 		}
 		return nil, err
 	}
 
-	stmt := `SELECT followee_id, FROM relationships WHERE follower_id = ?`
+	stmt := `
+		SELECT u.user_id, u.username, u.email
+		FROM users u
+		JOIN relationships r ON u.user_id = r.followee_id
+		WHERE r.follower_id = ?
+		`
+
 	rows, err := m.DB.Query(stmt, userID)
 	if err != nil {
 		return nil, NewErrDatabaseOperationFailed(err)
 	}
 	defer rows.Close()
 
-	relationships := []*Relationship{}
+	users := []*User{}
 	for rows.Next() {
-		r := &Relationship{}
-		err := rows.Scan(&r.RelationshipID, &r.FollowerID, &r.FolloweeID, &r.CreatedAt)
+		u := &User{}
+		err := rows.Scan(&u.UserID, &u.Username, &u.Email)
 		if err != nil {
 			return nil, NewErrDatabaseOperationFailed(err)
 		}
-		relationships = append(relationships, r)
+		users = append(users, u)
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, NewErrDatabaseOperationFailed(err)
 	}
 
-	return relationships, nil
+	return users, nil
 }

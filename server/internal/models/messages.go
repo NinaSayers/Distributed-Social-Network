@@ -43,7 +43,7 @@ func (m *MessageModel) Create(user_id int, content string) (int, error) {
 }
 
 func (m *MessageModel) Get(id int) (*Message, error) {
-	stmt := `SELECT id, user_id, content, created_at, updated_at FROM messages WHERE message_id = ?`
+	stmt := `SELECT message_id, user_id, content, created_at, updated_at FROM messages WHERE message_id = ?`
 	row := m.DB.QueryRow(stmt, id)
 
 	p := &Message{}
