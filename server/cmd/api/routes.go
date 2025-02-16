@@ -7,7 +7,7 @@ func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	// mux.HandleFunc("/", app.feed)
 	// mux.HandleFunc("GET	/users", app.ListUsersHandler)
-	// mux.HandleFunc("POST /users", app.CreateUserHandler)
+	mux.HandleFunc("POST /users", app.CreateUserHandler)
 	// mux.HandleFunc("GET /users/{id}", app.GetUserHandler)
 	// mux.HandleFunc("PUT /users/{id}", app.UpdateUserHandler)
 	// mux.HandleFunc("DELETE /users/{id}", app.DeleteUserHandler)

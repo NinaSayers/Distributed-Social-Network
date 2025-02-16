@@ -4,7 +4,7 @@ import "database/sql"
 
 type Models struct {
 	User         *UserModel
-	Message      *MessageModel
+	Post         *PostModel
 	Relationship *RelationshipModel
 	Retweet      *RetweetModel
 }
@@ -12,7 +12,7 @@ type Models struct {
 func NewModels(db *sql.DB) Models {
 	return Models{
 		User:         &UserModel{DB: db},
-		Message:      &MessageModel{DB: db},
+		Post:         &PostModel{DB: db},
 		Relationship: &RelationshipModel{DB: db},
 		Retweet:      &RetweetModel{DB: db},
 	}

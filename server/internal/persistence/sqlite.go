@@ -3,6 +3,7 @@ package persistence
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -57,17 +58,21 @@ func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error
 		if err != nil {
 			return nil, err
 		}
+		user.UserID = base58.Encode(id)
+
 		_, err = s.User.Create(&user)
 		if err != nil {
 			return nil, err
 		}
-	case "message":
-		var message dto.CreateMessageDTO
+	case "post":
+		var message dto.CreatePostDTO
 		err := json.Unmarshal(*data, &message)
 		if err != nil {
 			return nil, err
 		}
-		_, err = s.Message.Create(&message)
+		message.PostID = base58.Encode(id)
+
+		_, err = s.Post.Create(&message)
 		if err != nil {
 			return nil, err
 		}
@@ -105,15 +110,16 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 		}
 		response, err := json.Marshal(user)
 		return &response, err
-	case "message":
-		message, err := s.Message.Get(base58.Encode(id))
+
+	case "post":
+		message, err := s.Post.Get(base58.Encode(id))
 		if err != nil {
 			return nil, err
 		}
 		response, err := json.Marshal(message)
 		return &response, err
 	}
-	return nil, nil
+	return nil, errors.New("entity not found")
 }
 
 func (s *SqliteDb) GetKeys() map[string][][]byte {

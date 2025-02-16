@@ -3,43 +3,47 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
 )
 
 // func (app *application) feed(w http.ResponseWriter, r *http.Request) {
 // 	w.Write([]byte("Getting feed"))
 // }
 
-// func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
-// 	var payload struct {
-// 		UserName string `json:"username"`
-// 		Email    string `json:"email"`
-// 		Password string `json:"password"`
-// 	}
+	var payload dto.CreateUserDTO
 
-// 	err := app.readJSON(w, r, &payload)
-// 	if err != nil {
-// 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
-// 		return
-// 	}
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
 
-// 	if payload.UserName == "" || payload.Email == "" || payload.Password == "" {
-// 		app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
-// 		return
-// 	}
+	if payload.UserName == "" || payload.Email == "" || payload.Password == "" {
+		app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
+		return
+	}
+	enc, err := json.Marshal(payload)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
 
-// 	// id, err := app.models.User.Create(payload.UserName, payload.Email, payload.Password)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
+	// id, err := app.models.User.Create(payload.UserName, payload.Email, payload.Password)
+	_, err = app.peer.Store("user", &enc)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
-// 	w.WriteHeader(http.StatusCreated)
-// 	json.NewEncoder(w).Encode(map[string]int{"user_id": id})
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]int{"user_id": 0})
 
-// 	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
-// 	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
-// }
+	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
+	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
+}
 
 // func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 // 	id, err := strconv.Atoi(r.PathValue("id"))

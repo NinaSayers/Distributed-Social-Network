@@ -2,6 +2,7 @@ package peer
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/persistence"
@@ -28,10 +29,28 @@ func NewSqlitePeer(ip string, port, bootstrapPort int, dbPath string, script str
 }
 
 func (p *SqlitePeer) Store(entity string, data *[]byte) (string, error) {
+	payload := map[string]interface{}{}
+	err := json.Unmarshal(*data, &payload)
+	if err != nil {
+		return "", err
+	}
+
 	hash := sha1.Sum(*data)
 	id := base58.Encode(hash[:])
 
-	_, err := p.StoreValue(entity, id, data) // Store in Kademlia
+	switch entity {
+	case "user":
+		email, ok := payload["email"].(string)
+		if !ok {
+			return "", fmt.Errorf("email is not a string")
+		}
+		hash = sha1.Sum(base58.Decode(email))
+		id = base58.Encode(hash[:])
+
+	default:
+	}
+
+	_, err = p.StoreValue(entity, id, data) // Store in Kademlia
 	if err != nil {
 		return "", err
 	}
