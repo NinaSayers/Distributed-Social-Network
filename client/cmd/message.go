@@ -1,23 +1,36 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strings"
 )
 
 func (app *Application) createMessageComponent() {
-	var content string
-	fmt.Print("Contenido del mensaje: ")
-	fmt.Scan(&content)
+    reader := bufio.NewReader(os.Stdin)
 
-	message, err := app.service.CreateMessage(app.user.UserID, content)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
+    fmt.Print("Contenido del mensaje: ")
+    content, err := reader.ReadString('\n')
+    if err != nil {
+        fmt.Println("Error al leer el mensaje:", err)
+        return
+    }
 
-	displayPost(*message, *app.user)
+    // Eliminar el salto de línea al final del mensaje
+    content = strings.TrimSpace(content)
+
+    // Llamar al servicio para publicar el mensaje
+    message, err := app.service.CreateMessage(app.user.UserID, content)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+
+    // Mostrar el mensaje publicado
+    displayPost(*message, *app.user)
 }
 
 func (app *Application) getMessage() {

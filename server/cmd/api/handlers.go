@@ -22,7 +22,7 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-
+ 
 	err := app.readJSON(w, r, &payload)
 	if err != nil {
 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
