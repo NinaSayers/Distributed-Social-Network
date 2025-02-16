@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
 )
 
 type Message struct {
-	MessageID int       `json:"message_id"`
-	UserID    int       `json:"user_id"`
+	MessageID string    `json:"message_id"`
+	UserID    string    `json:"user_id"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -18,9 +20,9 @@ type MessageModel struct {
 	DB *sql.DB
 }
 
-func (m *MessageModel) Create(user_id int, content string) (int, error) {
+func (m *MessageModel) Create(message *dto.CreateMessageDTO) (int, error) {
 	var count int
-	err := m.DB.QueryRow("SELECT COUNT(*) FROM users WHERE user_id = ?", user_id).Scan(&count)
+	err := m.DB.QueryRow("SELECT COUNT(*) FROM users WHERE user_id = ?", message.UserID).Scan(&count)
 	if err != nil {
 		return 0, NewErrUserCheck(err)
 	}
@@ -28,8 +30,8 @@ func (m *MessageModel) Create(user_id int, content string) (int, error) {
 		return 0, ErrNoRecord
 	}
 
-	stmt := `INSERT INTO messages (user_id, content) VALUES (?, ?)`
-	result, err := m.DB.Exec(stmt, user_id, content)
+	stmt := `INSERT INTO messages (user_id, message_id, content) VALUES (?, ?, ?)`
+	result, err := m.DB.Exec(stmt, message.UserID, message.MessageID, message.Content)
 	if err != nil {
 		return 0, NewErrDatabaseOperationFailed(err)
 	}
@@ -42,7 +44,7 @@ func (m *MessageModel) Create(user_id int, content string) (int, error) {
 	return int(id), nil
 }
 
-func (m *MessageModel) Get(id int) (*Message, error) {
+func (m *MessageModel) Get(id string) (*Message, error) {
 	stmt := `SELECT message_id, user_id, content, created_at, updated_at FROM messages WHERE message_id = ?`
 	row := m.DB.QueryRow(stmt, id)
 
@@ -58,7 +60,7 @@ func (m *MessageModel) Get(id int) (*Message, error) {
 	return p, nil
 }
 
-func (m *MessageModel) ListByUser(userID int64) ([]*Message, error) {
+func (m *MessageModel) ListByUser(userID string) ([]*Message, error) {
 
 	var count int
 	err := m.DB.QueryRow("SELECT COUNT(*) FROM users WHERE user_id = ?", userID).Scan(&count)
@@ -99,7 +101,7 @@ func (m *MessageModel) ListByUser(userID int64) ([]*Message, error) {
 	return messages, nil
 }
 
-func (m *MessageModel) Delete(messageID int64) error {
+func (m *MessageModel) Delete(messageID string) error {
 
 	res, err := m.DB.Exec("DELETE FROM messages WHERE message_id = ?", messageID)
 	if err != nil {

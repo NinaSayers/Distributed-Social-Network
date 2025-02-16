@@ -2,10 +2,14 @@ package persistence
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/models"
+	"github.com/jbenet/go-base58"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -36,14 +40,39 @@ func NewSqliteDb(dbPath string, script string) *SqliteDb {
 	return &SqliteDb{db: db, Models: models.NewModels(db)}
 }
 
+func (s *SqliteDb) MainEntity() string {
+	return "user"
+}
+
 func (s *SqliteDb) Handle(action string, path string, data *[]byte) (*[]byte, error) {
 	return nil, nil
 }
 
 // inserts a key-value pair into the SQLite database.
-func (s *SqliteDb) Create(key []byte, data *[]byte) error {
-	_, err := s.db.Exec("INSERT INTO kv_store (key, data) VALUES (?, ?)", key, *data)
-	return err
+func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error) {
+	switch entity {
+	case "user":
+		var user dto.CreateUserDTO
+		err := json.Unmarshal(*data, &user)
+		if err != nil {
+			return nil, err
+		}
+		_, err = s.User.Create(&user)
+		if err != nil {
+			return nil, err
+		}
+	case "message":
+		var message dto.CreateMessageDTO
+		err := json.Unmarshal(*data, &message)
+		if err != nil {
+			return nil, err
+		}
+		_, err = s.Message.Create(&message)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
 }
 
 // GetValue retrieves a value from the database by key.
@@ -67,16 +96,76 @@ func (s *SqliteDb) Delete(key []byte) error {
 	return nil
 }
 
-func (s *SqliteDb) GetKeys() [][]byte {
-	// keys, err := s.db.(context.TODO(), "*").Result()
-	// result := [][]byte{}
-	// if err != nil {
-	// 	return result
-	// }
-	// for _, key := range keys {
-	// 	keyBytes := base58.Decode(key)
-	// 	result = append(result, keyBytes)
-	// }
-	// return result
-	return nil
+func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
+	switch entity {
+	case "user":
+		user, err := s.User.Get(base58.Encode(id))
+		if err != nil {
+			return nil, err
+		}
+		response, err := json.Marshal(user)
+		return &response, err
+	case "message":
+		message, err := s.Message.Get(base58.Encode(id))
+		if err != nil {
+			return nil, err
+		}
+		response, err := json.Marshal(message)
+		return &response, err
+	}
+	return nil, nil
+}
+
+func (s *SqliteDb) GetKeys() map[string][][]byte {
+	keys := make(map[string][][]byte)
+
+	// Get all table names
+	rows, err := s.db.Query("SELECT name FROM sqlite_master WHERE type='table'")
+	if err != nil {
+		log.Fatalf("Failed to get table names: %v", err)
+	}
+	defer rows.Close()
+
+	var tableName string
+	for rows.Next() {
+		err := rows.Scan(&tableName)
+		fmt.Println("Table name: ", tableName)
+		if err != nil {
+			fmt.Printf("Failed to scan table name: %v \n", err)
+			// log.Fatalf("Failed to scan table name: %v", err)
+			continue
+		}
+
+		// Get all keys from the table
+		tableKeys, err := s.getTableKeys(tableName)
+		if err != nil {
+			fmt.Printf("Failed to get keys from table %s: %v \n", tableName, err)
+			// log.Fatalf("Failed to get keys from table %s: %v", tableName, err)
+			continue
+		}
+		keys[tableName] = tableKeys
+	}
+
+	return keys
+}
+
+func (s *SqliteDb) getTableKeys(tableName string) ([][]byte, error) {
+	query := "SELECT " + tableName + "_id FROM " + tableName
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var key []byte
+	var tableKeys [][]byte
+	for rows.Next() {
+		err := rows.Scan(&key)
+		if err != nil {
+			return nil, err
+		}
+		tableKeys = append(tableKeys, key)
+	}
+
+	return tableKeys, nil
 }

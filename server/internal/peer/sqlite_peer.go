@@ -2,6 +2,7 @@ package peer
 
 import (
 	"crypto/sha1"
+	"fmt"
 
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/persistence"
 	kademlia "github.com/jackverneda/godemlia/pkg"
@@ -12,6 +13,13 @@ type SqlitePeer struct {
 	kademlia.Node
 }
 
+func InitSqlitePeer(ip string, port, bootPort int, dbPath string, script string, bootstrap bool) *SqlitePeer {
+	peer := NewSqlitePeer(ip, 8080, 32140, dbPath, script, bootstrap)
+	addr := fmt.Sprintf("%s:%d", ip, port)
+	go peer.CreateGRPCServer(addr)
+	return peer
+}
+
 func NewSqlitePeer(ip string, port, bootstrapPort int, dbPath string, script string, isBootstrapNode bool) *SqlitePeer {
 	db := persistence.NewSqliteDb(dbPath, script) // Initialize SQLite DB
 	newPeer := kademlia.NewNode(ip, port, bootstrapPort, db, isBootstrapNode)
@@ -19,14 +27,14 @@ func NewSqlitePeer(ip string, port, bootstrapPort int, dbPath string, script str
 	return &SqlitePeer{*newPeer}
 }
 
-func (p *SqlitePeer) Store(data *[]byte) (string, error) {
+func (p *SqlitePeer) Store(entity string, data *[]byte) (string, error) {
 	hash := sha1.Sum(*data)
-	key := base58.Encode(hash[:])
+	id := base58.Encode(hash[:])
 
-	_, err := p.StoreValue(key, data) // Store in Kademlia
+	_, err := p.StoreValue(entity, id, data) // Store in Kademlia
 	if err != nil {
 		return "", err
 	}
 
-	return key, nil
+	return id, nil
 }

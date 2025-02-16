@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -58,22 +59,22 @@ func main() {
 		config:   cfg,
 		errorLog: errorLog,
 		infoLog:  infoLog,
-		peer:     peer.NewSqlitePeer(ip, 8080, 32140, dbPath, "cmd/api/distnetdb.sql", true),
+		peer:     peer.InitSqlitePeer(ip, 8080, 32140, dbPath, "cmd/api/distnetdb.sql", true),
 	}
 	fmt.Println(app.config.port)
 
-	// srv := &http.Server{
-	// 	Addr:         fmt.Sprintf(":%d", cfg.port),
-	// 	ErrorLog:     errorLog,
-	// 	Handler:      app.routes(),
-	// 	IdleTimeout:  time.Minute,
-	// 	ReadTimeout:  10 * time.Second,
-	// 	WriteTimeout: 30 * time.Second,
-	// }
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.port),
+		ErrorLog:     errorLog,
+		Handler:      app.routes(),
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+	}
 
-	// infoLog.Printf("Starting server on %d", cfg.port)
-	// err := srv.ListenAndServe()
-	// errorLog.Fatal(err)
+	infoLog.Printf("Starting server on %d", cfg.port)
+	err := srv.ListenAndServe()
+	errorLog.Fatal(err)
 }
 
 func openDB(dsn string) (*sql.DB, error) {

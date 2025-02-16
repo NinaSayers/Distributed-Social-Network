@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	UserID       int       `json:"user_id"`
+	UserID       string    `json:"user_id"`
 	Username     string    `json:"username"`
 	Email        string    `json:"email"`
 	PasswordHash string    `json:"-"`
@@ -23,15 +24,15 @@ type UserModel struct {
 	DB *sql.DB
 }
 
-func (m *UserModel) Create(username, email, password string) (int, error) {
-	stmt := `INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)`
+func (m *UserModel) Create(user *dto.CreateUserDTO) (int, error) {
+	stmt := `INSERT INTO users (user_id, username, email, password_hash) VALUES (?, ?, ?, ?)`
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
 		return 0, err
 	}
 
-	result, err := m.DB.Exec(stmt, username, email, hashedPassword)
+	result, err := m.DB.Exec(stmt, user.UserID, user.Username, user.Email, hashedPassword)
 	if err != nil {
 		return 0, err
 	}
@@ -70,7 +71,7 @@ func (m *UserModel) Authenticate(email string, password string) (*User, error) {
 	return u, nil
 }
 
-func (m *UserModel) Get(user_id int) (*User, error) {
+func (m *UserModel) Get(user_id string) (*User, error) {
 	stmt := `SELECT user_id, username, email, password_hash, created_at, updated_at 
 			FROM users
 			WHERE user_id = ?
@@ -160,7 +161,7 @@ func (m *UserModel) Update(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (m *UserModel) Delete(ctx context.Context, userID int) error {
+func (m *UserModel) Delete(ctx context.Context, userID string) error {
 	query := `
  			DELETE FROM users
  			WHERE user_id = ?
