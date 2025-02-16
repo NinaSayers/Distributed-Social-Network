@@ -4,11 +4,13 @@ FROM golang:1.23-alpine AS builder
 # Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
 
+COPY go.mod go.sum ./
+RUN go mod download
+
 # Copia los archivos del proyecto al directorio de trabajo
 COPY . .
 
 # Compila el binario
-RUN go mod download
 RUN go build -o server ./cmd/api
 
 # Usa una imagen base más pequeña para ejecutar el binario
