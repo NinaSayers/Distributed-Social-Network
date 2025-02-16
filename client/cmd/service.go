@@ -250,10 +250,7 @@ func (s *Service) UnfollowUser(userID, followeeID int) error {
 }
 
 func (s *Service) ListFollowers(user_id int) ([]User, error) {
-	var id string
-	fmt.Print("ID de usuario: ")
-	fmt.Scan(&id)
-
+	
 	resp, err := http.Get(baseURL + "/users/" + strconv.Itoa(user_id) + "/followers")
 	if err != nil {
 		fmt.Println("Error:", err)
