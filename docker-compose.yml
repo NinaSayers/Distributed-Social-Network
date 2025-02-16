@@ -1,0 +1,77 @@
+version: '3.8'
+
+
+
+networks:
+  clients_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.10.0/24
+
+  servers_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.11.0/24
+
+
+services:
+  router:
+    image: router:latest
+    build:
+      context: ./router
+    container_name: router
+    privileged: true
+    networks:
+      clients_net:
+        ipv4_address: 10.0.10.254
+      servers_net:
+        ipv4_address: 10.0.11.254
+    restart: unless-stopped
+   
+
+  db:
+    image: db:latest
+    build:
+      context: ./database
+    container_name: db_distnet
+    networks:
+      servers_net:
+        ipv4_address: 10.0.11.100
+    ports:
+      - "3306:3306"
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    privileged: true
+
+  server:
+    image: servidor:latest
+    build:
+      context: ./server
+    container_name: server_distnet
+    networks:
+      servers_net:
+        ipv4_address: 10.0.11.2
+    ports:
+      - "4000:4000"
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    privileged: true
+
+  client1:
+    image: cliente:latest
+    build:
+      context: ./client
+    container_name: client1
+    networks:
+      clients_net:
+        ipv4_address: 10.0.10.2
+    ports:
+      - "3000:3000"
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    privileged: true

@@ -11,13 +11,8 @@ import (
 	"distnet/internal/models"
 )
 
-func (app *application) feed(w http.ResponseWriter, r *http.Request) { // creo que esto hay que borrarlo
-	if r.URL.Path != "/" {
-		app.notFound(w)
-		return
-	}
-
-	w.Write([]byte("Hello from Distnet"))
+func (app *application) feed(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Getting feed"))
 }
 
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +22,7 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
-
+ 
 	err := app.readJSON(w, r, &payload)
 	if err != nil {
 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
@@ -284,25 +279,180 @@ func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Reques
 
 // ////////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	var payload struct {
+		FollowerID int `json:"follower_id"`
+		FolloweeID int `json:"followee_id"`
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	if payload.FollowerID == 0 || payload.FolloweeID == 0 {
+		app.badRequestResponse(w, r, errors.New("follower_id y followee_id son requeridos"))
+		return
+	}
+
+	err = app.models.Relationship.FollowUser(payload.FollowerID, payload.FolloweeID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) { // Assuming ErrNoRecord is defined in your models package
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+		// w.Write([]byte("Getting users"))
+	}
 }
 func (app *application) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	followee_id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	var payload struct {
+		UserID int `json:"user_id"`
+	}
+
+	err = app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	defer r.Body.Close()
+
+	if payload.UserID == 0 {
+		app.badRequestResponse(w, r, errors.New("relationship_id is required"))
+		return
+	}
+
+	err = app.models.Relationship.UnfollowUser(payload.UserID, followee_id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+		// w.Write([]byte("Getting users"))
+	}
 }
 func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
+		return
+	}
+
+	followers, err := app.models.Relationship.ListFollowers(userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(followers)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	//w.Write([]byte("Getting users"))
 }
 func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
+	if err != nil {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
+		return
+	}
+
+	followers, err := app.models.Relationship.ListFollowing(userID)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(followers)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	//w.Write([]byte("Getting users"))
 }
 
 // ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) RetweetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	var payload struct {
+		UserID    int `json:"user_id"`
+		MessageID int `json:"message_id"`
+	}
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	if payload.UserID == 0 || payload.MessageID == 0 {
+		app.badRequestResponse(w, r, errors.New("user_id and message_id are required"))
+		return
+	}
+
+	err = app.models.Retweet.CreateRetweet(payload.UserID, payload.MessageID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) || errors.Is(err, models.ErrRelationshipExists) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated) // Indicate successful creation
+
+	//w.Write([]byte("Getting users"))
 }
 func (app *application) UndoRetweetHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Getting users"))
+	messageID, err := strconv.Atoi(r.URL.Query().Get("message_id"))
+	if err != nil {
+		app.badRequestResponse(w, r, errors.New("invalid message_id"))
+		return
+	}
+	var payload struct {
+		UserID int `json:"user_id"`
+	}
+
+	err = app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	if payload.UserID == 0 {
+		app.badRequestResponse(w, r, errors.New("user_id is required"))
+		return
+	}
+
+	err = app.models.Retweet.UndoRetweet(payload.UserID, messageID)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	//w.Write([]byte("Getting users"))
 }
+
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) FavoriteTweetHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Getting users"))
 }

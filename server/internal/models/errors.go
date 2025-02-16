@@ -10,6 +10,7 @@ var (
 	ErrInvalidCredentials 	   = errors.New("models: invalid credentials")
 	ErrDuplicateEmail     	   = errors.New("models: duplicate email")
 	ErrUserCheck          	   = errors.New("models: error checking user existence")
+	ErrMessageCheck            = errors.New("models: error checking message existence")
 	ErrPostCreation            = errors.New("models: error creating post")
 	ErrPostIDRetrieval         = errors.New("models: error retrieving post ID")
 	ErrDatabaseOperationFailed = errors.New("models: database operation failed")

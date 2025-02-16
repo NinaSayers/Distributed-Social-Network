@@ -133,7 +133,6 @@ func (m *UserModel) Update(ctx context.Context, user *User) error {
 	 SET 
 	 username = ?, 
 	 email = ?, 
-	 password_hash = ?, 
 	 updated_at = ?
 	 WHERE user_id = ?
 	`
@@ -144,7 +143,7 @@ func (m *UserModel) Update(ctx context.Context, user *User) error {
 	}
 	defer stmt.Close()
 
-	result, err := stmt.ExecContext(ctx, user.Username, user.Email, user.PasswordHash, time.Now(), user.UserID)
+	result, err := stmt.ExecContext(ctx, user.Username, user.Email, time.Now(), user.UserID)
 	if err != nil {
 		return fmt.Errorf("error executing update statement: %w", err)
 	}

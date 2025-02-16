@@ -17,6 +17,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET	/users/{id}/following", app.ListFollowingHandler)
 
 	mux.HandleFunc("POST /messages", app.CreateMessageHandler)
+	mux.HandleFunc("GET /feed", app.feed)
 	// mux.HandleFunc("POST /tweets", app.CreateTweetHandler)
 	mux.HandleFunc("GET /messages/{id}", app.GetMessageHandler)
 	mux.HandleFunc("GET /users/{id}/messages", app.ListUserMessagesHandler)
