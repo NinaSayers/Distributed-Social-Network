@@ -3,33 +3,39 @@ package persistence
 import (
 	"database/sql"
 	"log"
+	"os"
 
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/models"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // Implements IPersistance from godemlia library
 type SqliteDb struct {
 	db *sql.DB
+	models.Models
 }
 
 // NewSqliteDb initializes a new SQLite database connection.
-func NewSqliteDb(dbPath string) *SqliteDb {
+func NewSqliteDb(dbPath string, script string) *SqliteDb {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Fatalf("Failed to connect to SQLite: %v", err)
 	}
 
 	// Create table if not exists
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS kv_store (
-		key TEXT PRIMARY KEY,
-		value BLOB
-	);`)
+	sqlBytes, err := os.ReadFile(script)
+	if err != nil {
+		log.Fatalf("Failed to load sql script: %v", err)
+	}
+
+	_, err = db.Exec(string(sqlBytes))
 	if err != nil {
 		log.Fatalf("Failed to create table: %v", err)
 	}
 
-	return &SqliteDb{db: db}
+	return &SqliteDb{db: db, Models: models.NewModels(db)}
 }
+
 func (s *SqliteDb) Handle(action string, path string, data *[]byte) (*[]byte, error) {
 	return nil, nil
 }

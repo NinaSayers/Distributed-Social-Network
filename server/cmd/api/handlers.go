@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"distnet/internal/models"
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/models"
 )
 
 func (app *application) feed(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +22,7 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
- 
+
 	err := app.readJSON(w, r, &payload)
 	if err != nil {
 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())

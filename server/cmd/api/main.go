@@ -3,15 +3,21 @@ package main
 import (
 	"context"
 	"database/sql"
-	"distnet/internal/models"
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/peer"
+	"github.com/NinaSayers/Distributed-Social-Network/server/pkg/utils"
+
 	_ "github.com/go-sql-driver/mysql"
+)
+
+var (
+	ip     = utils.GetIpFromHost()
+	dbPath = "./cmd/api/distnetdb.sqlite"
 )
 
 type config struct {
@@ -26,14 +32,14 @@ type application struct {
 	config   config
 	errorLog *log.Logger
 	infoLog  *log.Logger
-	models   models.Models
+	peer     *peer.SqlitePeer
 }
 
 func main() {
 	var cfg config
 
 	// flag.StringVar(&cfg.db.dsn, "db-dsn", "user:password@/distnetdb?parseTime=true", "MySQL DSN")
-	flag.StringVar(&cfg.db.dsn, "db-dsn", "user:password@tcp(10.0.11.100:3306)/distnetdb?parseTime=true", "MySQL DSN") //comentar esta linea para probar client sin levantar contenedor de client
+	// flag.StringVar(&cfg.db.dsn, "db-dsn", "user:password@tcp(10.0.11.100:3306)/distnetdb?parseTime=true", "MySQL DSN") //comentar esta linea para probar client sin levantar contenedor de client
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.Parse()
@@ -41,32 +47,33 @@ func main() {
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	db, err := openDB(cfg.db.dsn)
-	if err != nil {
-		errorLog.Fatal(err)
-	}
-	defer db.Close()
+	// db, err := openDB(cfg.db.dsn)
+	// if err != nil {
+	// 	errorLog.Fatal(err)
+	// }
+	// defer db.Close()
 
 	infoLog.Printf("Database connection established")
 	app := &application{
 		config:   cfg,
 		errorLog: errorLog,
 		infoLog:  infoLog,
-		models:   models.NewModels(db),
+		peer:     peer.NewSqlitePeer(ip, 8080, 32140, dbPath, "cmd/api/distnetdb.sql", true),
 	}
+	fmt.Println(app.config.port)
 
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		ErrorLog:     errorLog,
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
+	// srv := &http.Server{
+	// 	Addr:         fmt.Sprintf(":%d", cfg.port),
+	// 	ErrorLog:     errorLog,
+	// 	Handler:      app.routes(),
+	// 	IdleTimeout:  time.Minute,
+	// 	ReadTimeout:  10 * time.Second,
+	// 	WriteTimeout: 30 * time.Second,
+	// }
 
-	infoLog.Printf("Starting server on %d", cfg.port)
-	err = srv.ListenAndServe()
-	errorLog.Fatal(err)
+	// infoLog.Printf("Starting server on %d", cfg.port)
+	// err := srv.ListenAndServe()
+	// errorLog.Fatal(err)
 }
 
 func openDB(dsn string) (*sql.DB, error) {
