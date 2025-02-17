@@ -20,28 +20,23 @@ type PostModel struct {
 	DB *sql.DB
 }
 
-func (m *PostModel) Create(post *dto.CreatePostDTO) (int, error) {
+func (m *PostModel) Create(post *dto.CreatePostDTO) (*Post, error) {
 	var count int
 	err := m.DB.QueryRow("SELECT COUNT(*) FROM user WHERE user_id = ?", post.UserID).Scan(&count)
 	if err != nil {
-		return 0, NewErrUserCheck(err)
+		return nil, NewErrUserCheck(err)
 	}
 	if count == 0 {
-		return 0, ErrNoRecord
+		return nil, ErrNoRecord
 	}
 
 	stmt := `INSERT INTO post (user_id, post_id, content) VALUES (?, ?, ?)`
-	result, err := m.DB.Exec(stmt, post.UserID, post.PostID, post.Content)
+	_, err = m.DB.Exec(stmt, post.UserID, post.PostID, post.Content)
 	if err != nil {
-		return 0, NewErrDatabaseOperationFailed(err)
+		return nil, NewErrDatabaseOperationFailed(err)
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, NewErrDatabaseOperationFailed(err)
-	}
-
-	return int(id), nil
+	return m.Get(post.PostID)
 }
 
 func (m *PostModel) Get(id string) (*Post, error) {

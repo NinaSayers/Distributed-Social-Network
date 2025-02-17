@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	k := 10
+	k := 5
 	networkName := "test_kademlia"
 	imageName := "test"
 	workdir := "/app"

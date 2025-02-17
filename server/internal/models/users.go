@@ -24,25 +24,20 @@ type UserModel struct {
 	DB *sql.DB
 }
 
-func (m *UserModel) Create(user *dto.CreateUserDTO) (int, error) {
+func (m *UserModel) Create(user *dto.CreateUserDTO) (*User, error) {
 	stmt := `INSERT INTO user (user_id, username, email, password_hash) VALUES (?, ?, ?, ?)`
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	result, err := m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, hashedPassword)
+	_, err = m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, hashedPassword)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
-
-	return int(id), nil
+	return m.Get(user.UserID)
 }
 
 func (m *UserModel) Authenticate(email string, password string) (*User, error) {

@@ -4,9 +4,11 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
+	"github.com/NinaSayers/Distributed-Social-Network/server/internal/models"
 	"github.com/jbenet/go-base58"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -77,7 +79,11 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	userBytes, err := app.peer.GetValue("user", id)
 	if err != nil {
-		app.serverError(w, err) //arreglar esto con el error correspondiente
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
 		return
 	}
 
@@ -111,35 +117,40 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-// 	id, err := strconv.Atoi(r.PathValue("id"))
-// 	fmt.Println(id)
-// 	if err != nil || id < 1 {
-// 		app.badRequestResponse(w, r, err)
-// 		return
-// 	}
+func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	fmt.Println(id)
+	if id == "" {
+		app.badRequestResponse(w, r, errors.New("missing user id"))
+		return
+	}
 
-// 	user, err := app.models.User.Get(id)
+	userBytes, err := app.peer.GetValue("user", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
 
-// 	if err != nil {
-// 		if errors.Is(err, models.ErrNoRecord) {
-// 			app.badRequestResponse(w, r, err)
-// 		} else {
-// 			app.serverError(w, err)
-// 		}
-// 		return
-// 	}
+	app.infoLog.Printf("Usuario obtenido %s", string(userBytes))
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	err = json.NewEncoder(w).Encode(user)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 	}
+	var user dto.AuthUserDTO
+	err = json.Unmarshal(userBytes, &user)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+	app.infoLog.Printf("User %s retrived \n", user.UserName)
 
-// 	// fmt.Fprintf(w, "%+v", user)
-
-// 	//w.Write([]byte(fmt.Sprintf("get user %d", user)))
-// }
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		app.serverError(w, err)
+	}
+}
 
 // func (app *application) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
 // 	// if r.URL.Path != "/" {
@@ -224,53 +235,61 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 // }
 
 // // ///////////////////////////////////////////////////////////////////////////////////////////
-// func (app *application) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
+	app.infoLog.Printf("Creating post repingaaaaaaa\n")
 
-// 	var payload struct {
-// 		UserID  int    `json:"user_id"`
-// 		Content string `json:"content"`
-// 	}
+	var payload dto.CreatePostDTO
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorLog.Println(err)
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+	app.infoLog.Printf("Creating post %s... \n", payload.UserID)
 
-// 	err := app.readJSON(w, r, &payload)
-// 	if err != nil {
-// 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
-// 		return
-// 	}
+	defer r.Body.Close()
 
-// 	defer r.Body.Close()
+	if payload.UserID == "" || payload.Content == "" {
+		app.badRequestResponse(w, r, errors.New("user_id y content son requeridos"))
+		return
+	}
 
-// 	if payload.UserID == 0 || payload.Content == "" {
-// 		app.badRequestResponse(w, r, errors.New("user_id y content son requeridos"))
-// 		return
-// 	}
+	// app.infoLog.Printf("Creating post %s... 2\n", payload.Content[:10])
 
-// 	messageID, err := app.models.Message.Create(payload.UserID, payload.Content)
-// 	if err != nil {
-// 		if errors.Is(err, models.ErrNoRecord) {
-// 			app.badRequestResponse(w, r, err)
-// 		} else {
-// 			app.serverError(w, err)
-// 		}
-// 		return
-// 	}
+	enc, err := json.Marshal(payload)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
 
-// 	createdMessage := models.Message{
-// 		MessageID: messageID,
-// 		UserID:    payload.UserID,
-// 		Content:   payload.Content,
-// 		CreatedAt: time.Now(),
-// 		UpdatedAt: time.Now(),
-// 	}
+	createdMessage, err := app.peer.Store("post", &enc)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusCreated)
-// 	err = json.NewEncoder(w).Encode(createdMessage)
-// 	if err != nil {
-// 		app.serverError(w, models.NewErrDatabaseOperationFailed(err))
-// 	}
+	// createdMessage := models.Message{
+	// 	MessageID: messageID,
+	// 	UserID:    payload.UserID,
+	// 	Content:   payload.Content,
+	// 	CreatedAt: time.Now(),
+	// 	UpdatedAt: time.Now(),
+	// }
 
-// 	//w.Write([]byte("Getting users"))
-// }
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(createdMessage)
+	if err != nil {
+		app.serverError(w, models.NewErrDatabaseOperationFailed(err))
+	}
+
+	//w.Write([]byte("Getting users"))
+}
+
 // func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 // 	id, err := strconv.Atoi(r.PathValue("id"))
@@ -298,25 +317,39 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 // 	//w.Write([]byte("Getting users"))
 // }
 
-// func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
-// 	id, err := strconv.Atoi(r.PathValue("id"))
-// 	if err != nil {
-// 		app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
-// 		return
-// 	}
+func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido"))
+		return
+	}
 
-// 	users, err := app.models.Message.ListByUser(int64(id))
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
+	// users, err := app.models.Message.ListByUser(int64(id))
+	postsBytes, err := app.peer.GetValue("post:user", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
 
-// 	err = json.NewEncoder(w).Encode(users)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
-// }
+	var posts []models.Post
+	err = json.Unmarshal(postsBytes, &posts)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+	app.infoLog.Printf("Post retrived %v\n", len(posts))
+
+	err = json.NewEncoder(w).Encode(posts)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+}
+
 // func (app *application) DeleteMessageHandler(w http.ResponseWriter, r *http.Request) {
 // 	id, err := strconv.Atoi(r.PathValue("id"))
 // 	if err != nil || id <= 0 {

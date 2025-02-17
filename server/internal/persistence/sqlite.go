@@ -62,10 +62,14 @@ func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error
 		user.UserID = base58.Encode(id)
 		fmt.Printf("Storing user %s with id %s \n", user.UserName, user.UserID)
 
-		_, err = s.User.Create(&user)
+		newUser, err := s.User.Create(&user)
 		if err != nil {
 			return nil, err
 		}
+
+		bytes, err := json.Marshal(newUser)
+		return &bytes, err
+
 	case "post":
 		var post dto.CreatePostDTO
 		err := json.Unmarshal(*data, &post)
@@ -73,12 +77,15 @@ func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error
 			return nil, err
 		}
 		post.PostID = base58.Encode(id)
-		fmt.Printf("Storing user %s... \n", post.Content[:10])
+		fmt.Printf("Storing post with id %s \n", post.PostID)
 
-		_, err = s.Post.Create(&post)
+		newPost, err := s.Post.Create(&post)
 		if err != nil {
 			return nil, err
 		}
+
+		bytes, err := json.Marshal(newPost)
+		return &bytes, err
 	}
 	return nil, nil
 }
@@ -123,6 +130,15 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 			return nil, err
 		}
 		response, err := json.Marshal(message)
+		return &response, err
+
+	case "post:user":
+		messages, err := s.Post.ListByUser(base58.Encode(id))
+		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
+			return nil, err
+		}
+		response, err := json.Marshal(messages)
 		return &response, err
 	}
 	return nil, errors.New("entity not found")
@@ -169,14 +185,15 @@ func (s *SqliteDb) getTableKeys(tableName string) ([][]byte, error) {
 	}
 	defer rows.Close()
 
-	var key []byte
+	var key string
 	var tableKeys [][]byte
 	for rows.Next() {
 		err := rows.Scan(&key)
+		fmt.Printf("INFRA KEY %s\n", key)
 		if err != nil {
 			return nil, err
 		}
-		tableKeys = append(tableKeys, key)
+		tableKeys = append(tableKeys, base58.Decode(key))
 	}
 
 	return tableKeys, nil
