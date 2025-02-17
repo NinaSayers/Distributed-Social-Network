@@ -14,7 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Implements IPersistance from godemlia library
+// Implements Infrastructure from godemlia library
 type SqliteDb struct {
 	db *sql.DB
 	models.Models
@@ -51,6 +51,7 @@ func (s *SqliteDb) Handle(action string, path string, data *[]byte) (*[]byte, er
 
 // inserts a key-value pair into the SQLite database.
 func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error) {
+	fmt.Printf("INFRA STORE %s - %s\n", entity, base58.Encode(id))
 	switch entity {
 	case "user":
 		var user dto.CreateUserDTO
@@ -59,20 +60,22 @@ func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error
 			return nil, err
 		}
 		user.UserID = base58.Encode(id)
+		fmt.Printf("Storing user %s with id %s \n", user.UserName, user.UserID)
 
 		_, err = s.User.Create(&user)
 		if err != nil {
 			return nil, err
 		}
 	case "post":
-		var message dto.CreatePostDTO
-		err := json.Unmarshal(*data, &message)
+		var post dto.CreatePostDTO
+		err := json.Unmarshal(*data, &post)
 		if err != nil {
 			return nil, err
 		}
-		message.PostID = base58.Encode(id)
+		post.PostID = base58.Encode(id)
+		fmt.Printf("Storing user %s... \n", post.Content[:10])
 
-		_, err = s.Post.Create(&message)
+		_, err = s.Post.Create(&post)
 		if err != nil {
 			return nil, err
 		}
@@ -81,31 +84,33 @@ func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error
 }
 
 // GetValue retrieves a value from the database by key.
-func (s *SqliteDb) GetValue(key string) ([]byte, error) {
-	var value []byte
-	err := s.db.QueryRow("SELECT value FROM kv_store WHERE key = ?", key).Scan(&value)
-	if err != nil {
-		return nil, err
-	}
-	return value, nil
-}
+// func (s *SqliteDb) GetValue(key string) ([]byte, error) {
+// 	var value []byte
+// 	err := s.db.QueryRow("SELECT value FROM kv_store WHERE key = ?", key).Scan(&value)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return value, nil
+// }
 
 // Close closes the database connection.
 func (s *SqliteDb) Close() {
 	s.db.Close()
 }
 
-func (s *SqliteDb) Delete(key []byte) error {
-	// Sin implementar aun
+// func (s *SqliteDb) Delete(key []byte) error {
+// 	// Sin implementar aun
 
-	return nil
-}
+// 	return nil
+// }
 
 func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
+	fmt.Printf("INFRA READ %s - %s\n", entity, base58.Encode(id))
 	switch entity {
 	case "user":
 		user, err := s.User.Get(base58.Encode(id))
 		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
 			return nil, err
 		}
 		response, err := json.Marshal(user)
@@ -114,6 +119,7 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 	case "post":
 		message, err := s.Post.Get(base58.Encode(id))
 		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
 			return nil, err
 		}
 		response, err := json.Marshal(message)

@@ -1,10 +1,14 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
+	"github.com/jbenet/go-base58"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // func (app *application) feed(w http.ResponseWriter, r *http.Request) {
@@ -25,6 +29,9 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 		app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
 		return
 	}
+
+	app.infoLog.Printf("Creating user %s \n", payload.Email)
+
 	enc, err := json.Marshal(payload)
 	if err != nil {
 		app.serverError(w, err) //arreglar esto con el error correspondiente
@@ -43,6 +50,65 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 
 	// w.Write([]byte(fmt.Sprintf("created user %d", id)))
 	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
+}
+
+func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
+
+	var payload dto.LoginDTO
+
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if payload.Email == "" || payload.Password == "" {
+		app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
+		return
+	}
+
+	app.infoLog.Printf("Email: %s, Password: %s", payload.Email, payload.Password)
+
+	// user, err := app.models.User.Authenticate(payload.Email, payload.Password)
+	hash := sha256.Sum256([]byte(payload.Email)) // More secure hash
+	id := base58.Encode(hash[:])[:22]
+
+	app.infoLog.Printf("Email %s encripted %s \n", payload.Email, id)
+
+	userBytes, err := app.peer.GetValue("user", id)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+
+	app.infoLog.Printf("Usuario obtenido %s", string(userBytes))
+
+	var user dto.AuthUserDTO
+	err = json.Unmarshal(userBytes, &user)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+	app.infoLog.Printf("User %s retrived \n", user.UserName)
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			app.invalidCredentialsResponse(w, r)
+			return
+		} else {
+			app.serverError(w, err)
+			return
+		}
+	}
+
+	token, err := GenerateJWT(user.UserName)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	app.writeJSON(w, http.StatusOK, map[string]interface{}{"token": token, "user": user}, nil)
+
 }
 
 // func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -476,45 +542,6 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 // }
 
 // // ///////////////////////////////////////////////////////////////////////////////////////////
-func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
-
-	// var payload struct {
-	// 	Email    string `json:"email"`
-	// 	Password string `json:"password"`
-	// }
-
-	// err := app.readJSON(w, r, &payload)
-	// if err != nil {
-	// 	app.badRequestResponse(w, r, err)
-	// 	return
-	// }
-
-	// if payload.Email == "" || payload.Password == "" {
-	// 	app.errorResponse(w, r, http.StatusBadRequest, "missing required fields")
-	// 	return
-	// }
-
-	// // user, err := app.models.User.Authenticate(payload.Email, payload.Password)
-	// enc, err := json.Marshal(payload)
-	// if err != nil {
-	// 	app.serverError(w, err) //arreglar esto con el error correspondiente
-	// 	return
-	// }
-
-	// user, err := app.peer.FindValue(&enc)
-	// if err != nil {
-	// 	app.invalidCredentialsResponse(w, r) //arreglar esto con el error correspondiente
-	// 	return
-	// }
-
-	// token, err := GenerateJWT(user.Username)
-	// if err != nil {
-	// 	app.serverError(w, err)
-	// 	return
-	// }
-	// app.writeJSON(w, http.StatusOK, map[string]interface{}{"token": token, "user": user}, nil)
-
-}
 
 // // func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 // // 	w.Write([]byte("Getting users"))

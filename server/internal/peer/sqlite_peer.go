@@ -1,7 +1,7 @@
 package peer
 
 import (
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 
@@ -34,20 +34,22 @@ func (p *SqlitePeer) Store(entity string, data *[]byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	fmt.Printf("Peering entity %s \n", entity)
 
-	hash := sha1.Sum(*data)
-	id := base58.Encode(hash[:])
-
+	var id string
 	switch entity {
 	case "user":
 		email, ok := payload["email"].(string)
 		if !ok {
 			return "", fmt.Errorf("email is not a string")
 		}
-		hash = sha1.Sum(base58.Decode(email))
-		id = base58.Encode(hash[:])
+		hash := sha256.Sum256([]byte(email)) // More secure hash
+		id = base58.Encode(hash[:])[:22]
+		fmt.Printf("Peering entity %s, id %s, email %s \n", entity, email)
 
 	default:
+		hash := sha256.Sum256(*data) // More secure hash
+		id = base58.Encode(hash[:])[:22]
 	}
 
 	_, err = p.StoreValue(entity, id, data) // Store in Kademlia

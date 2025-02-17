@@ -5,7 +5,7 @@ import (
 )
 
 func (app *Application) followUser() {
-	var id int
+	var id string
 	fmt.Print("ID de usuario a seguir: ")
 	fmt.Scan(&id)
 
@@ -18,7 +18,7 @@ func (app *Application) followUser() {
 }
 
 func (app *Application) unfollowUser() {
-	var id int
+	var id string
 	fmt.Print("ID de usuario a dejar de seguir: ")
 	fmt.Scan(&id)
 
@@ -33,7 +33,7 @@ func (app *Application) unfollowUser() {
 }
 
 func (app *Application) listFollowers() {
-	var id int
+	var id string
 	fmt.Print("ID de usuario: ")
 	fmt.Scan(&id)
 
@@ -47,7 +47,7 @@ func (app *Application) listFollowers() {
 }
 
 func (app *Application) listFollowing() {
-	var id int
+	var id string
 	fmt.Print("ID de usuario: ")
 	fmt.Scan(&id)
 

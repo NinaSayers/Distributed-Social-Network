@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 )
 
 // Service struct to handle API requests
@@ -19,7 +18,7 @@ func NewService() *Service {
 }
 
 // CreateUser sends a request to create a new user
-func (s *Service) CreateUser(username, email, password string) (int, error) {
+func (s *Service) CreateUser(username, email, password string) (string, error) {
 	payload := map[string]string{
 		"username": username,
 		"email":    email,
@@ -29,26 +28,26 @@ func (s *Service) CreateUser(username, email, password string) (int, error) {
 
 	resp, err := s.client.Post(baseURL+"/users", "application/json", bytes.NewBuffer(body))
 	if err != nil {
-		return 0, fmt.Errorf("failed to send request: %w", err)
+		return "", fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		return 0, fmt.Errorf("failed to create user: status %d", resp.StatusCode)
+		return "", fmt.Errorf("failed to create user: status %d", resp.StatusCode)
 	}
 
 	var response struct {
-		UserID int `json:"user_id"`
+		UserID string `json:"user_id"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return 0, fmt.Errorf("failed to decode response: %w", err)
+		return "", fmt.Errorf("failed to decode response: %w", err)
 	}
 	return response.UserID, nil
 }
 
 // GetUser retrieves a user by ID
-func (s *Service) GetUser(userID int) (*User, error) {
-	resp, err := s.client.Get(baseURL + "/users/" + strconv.Itoa(userID))
+func (s *Service) GetUser(userID string) (*User, error) {
+	resp, err := s.client.Get(baseURL + "/users/" + userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
@@ -85,8 +84,8 @@ func (s *Service) ListUsers() ([]User, error) {
 }
 
 // DeleteUser deletes a user by ID
-func (s *Service) DeleteUser(userID int) error {
-	req, err := http.NewRequest(http.MethodDelete, baseURL+"/users/"+strconv.Itoa(userID), nil)
+func (s *Service) DeleteUser(userID string) error {
+	req, err := http.NewRequest(http.MethodDelete, baseURL+"/users/"+userID, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -103,14 +102,14 @@ func (s *Service) DeleteUser(userID int) error {
 	return nil
 }
 
-func (s *Service) UpdateUser(userID int, username, email string) error {
+func (s *Service) UpdateUser(userID, username, email string) error {
 	payload := map[string]string{
 		"username": username,
 		"email":    email,
 	}
 	body, _ := json.Marshal(payload)
 
-	req, err := http.NewRequest(http.MethodPut, baseURL+"/users/"+strconv.Itoa(userID), bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodPut, baseURL+"/users/"+userID, bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -135,14 +134,14 @@ func (s *Service) Login(email, password string) (*Client, error) {
 		"password": password,
 	}
 
-	body, _ := json.Marshal(payload)
-	jsonData, err := json.Marshal(payload)
+	body, err := json.Marshal(payload)
+	// jsonData, err := json.Marshal(payload)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil, err
 	}
 
-	resp, err := http.Post(baseURL+"/auth/login", "application/json", bytes.NewBuffer(jsonData))
+	resp, err := http.Post(baseURL+"/auth/login", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil, err
@@ -151,7 +150,6 @@ func (s *Service) Login(email, password string) (*Client, error) {
 	defer resp.Body.Close()
 
 	var response Client
-	err = json.Unmarshal(body, &response)
 
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
@@ -162,9 +160,9 @@ func (s *Service) Login(email, password string) (*Client, error) {
 ////////////////////
 
 // CreateMessage sends a message for a user
-func (s *Service) CreateMessage(userID int, content string) (*Message, error) {
+func (s *Service) CreateMessage(userID string, content string) (*Message, error) {
 	var payload = struct {
-		UserID  int    `json:"user_id"`
+		UserID  string `json:"user_id"`
 		Content string `json:"content"`
 	}{userID, content}
 
@@ -188,8 +186,8 @@ func (s *Service) CreateMessage(userID int, content string) (*Message, error) {
 }
 
 // ListUserMessages retrieves messages for a user
-func (s *Service) ListUserMessages(userID int) ([]Message, error) {
-	resp, err := s.client.Get(baseURL + "/users/" + strconv.Itoa(userID) + "/messages")
+func (s *Service) ListUserMessages(userID string) ([]Message, error) {
+	resp, err := s.client.Get(baseURL + "/users/" + userID + "/messages")
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
@@ -207,14 +205,14 @@ func (s *Service) ListUserMessages(userID int) ([]Message, error) {
 }
 
 // FollowUser sends a request to follow a user
-func (s *Service) FollowUser(followerID, followeeID int) error {
-	payload := map[string]int{
+func (s *Service) FollowUser(followerID, followeeID string) error {
+	payload := map[string]string{
 		"follower_id": followerID,
 		"followee_id": followeeID,
 	}
 	body, _ := json.Marshal(payload)
 
-	resp, err := http.Post(baseURL+"/users/"+strconv.Itoa(followeeID)+"/follow", "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(baseURL+"/users/"+followeeID+"/follow", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
@@ -226,12 +224,12 @@ func (s *Service) FollowUser(followerID, followeeID int) error {
 	return nil
 }
 
-func (s *Service) UnfollowUser(userID, followeeID int) error {
-	payload := map[string]int{
+func (s *Service) UnfollowUser(userID, followeeID string) error {
+	payload := map[string]string{
 		"user_id": userID,
 	}
 	body, _ := json.Marshal(payload)
-	req, err := http.NewRequest(http.MethodDelete, baseURL+"/users/"+strconv.Itoa(followeeID)+"/follow", bytes.NewBuffer(body))
+	req, err := http.NewRequest(http.MethodDelete, baseURL+"/users/"+followeeID+"/follow", bytes.NewBuffer(body))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
@@ -249,9 +247,9 @@ func (s *Service) UnfollowUser(userID, followeeID int) error {
 	return nil
 }
 
-func (s *Service) ListFollowers(user_id int) ([]User, error) {
-	
-	resp, err := http.Get(baseURL + "/users/" + strconv.Itoa(user_id) + "/followers")
+func (s *Service) ListFollowers(user_id string) ([]User, error) {
+
+	resp, err := http.Get(baseURL + "/users/" + user_id + "/followers")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil, err
@@ -269,9 +267,9 @@ func (s *Service) ListFollowers(user_id int) ([]User, error) {
 
 }
 
-func (s *Service) ListFollowing(user_id int) ([]User, error) {
-	
-	resp, err := http.Get(baseURL + "/users/" + strconv.Itoa(user_id) + "/following")
+func (s *Service) ListFollowing(user_id string) ([]User, error) {
+
+	resp, err := http.Get(baseURL + "/users/" + user_id + "/following")
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
@@ -288,8 +286,8 @@ func (s *Service) ListFollowing(user_id int) ([]User, error) {
 	return users, nil
 
 }
-func (s *Service) GetMessage(id int) (*Message, error) {
-	id_string := strconv.Itoa(id)
+func (s *Service) GetMessage(id string) (*Message, error) {
+	id_string := id
 	resp, err := s.client.Get(baseURL + "/messages/" + id_string)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)

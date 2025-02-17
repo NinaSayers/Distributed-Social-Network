@@ -3,8 +3,8 @@ package main
 import "time"
 
 type Message struct {
-	MessageID int       `json:"message_id"`
-	UserID    int       `json:"user_id"`
+	MessageID string    `json:"post_id"`
+	UserID    string    `json:"user_id"`
 	Content   string    `json:"content"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -26,7 +26,7 @@ type Retweet struct {
 }
 
 type User struct {
-	UserID    int       `json:"user_id"`
+	UserID    string    `json:"user_id"`
 	UserName  string    `json:"username"`
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`

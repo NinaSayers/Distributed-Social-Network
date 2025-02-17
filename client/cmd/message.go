@@ -10,31 +10,31 @@ import (
 )
 
 func (app *Application) createMessageComponent() {
-    reader := bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 
-    fmt.Print("Contenido del mensaje: ")
-    content, err := reader.ReadString('\n')
-    if err != nil {
-        fmt.Println("Error al leer el mensaje:", err)
-        return
-    }
+	fmt.Print("Contenido del mensaje: ")
+	content, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Println("Error al leer el mensaje:", err)
+		return
+	}
 
-    // Eliminar el salto de línea al final del mensaje
-    content = strings.TrimSpace(content)
+	// Eliminar el salto de línea al final del mensaje
+	content = strings.TrimSpace(content)
 
-    // Llamar al servicio para publicar el mensaje
-    message, err := app.service.CreateMessage(app.user.UserID, content)
-    if err != nil {
-        fmt.Println("Error:", err)
-        return
-    }
+	// Llamar al servicio para publicar el mensaje
+	message, err := app.service.CreateMessage(app.user.UserID, content)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
 
-    // Mostrar el mensaje publicado
-    displayPost(*message, *app.user)
+	// Mostrar el mensaje publicado
+	displayPost(*message, *app.user)
 }
 
 func (app *Application) getMessage() {
-	var id int
+	var id string
 	fmt.Print("ID del mensaje: ")
 	fmt.Scan(&id)
 

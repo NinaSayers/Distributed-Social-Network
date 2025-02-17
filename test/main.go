@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	k := 5
+	k := 10
 	networkName := "test_kademlia"
 	imageName := "test"
 	workdir := "/app"
@@ -48,7 +48,7 @@ func main() {
 				log.Printf("Container %s started successfully", containerName)
 			}
 		}(i)
-		<-time.After(10 * time.Second)
+		<-time.After(1 * time.Minute)
 	}
 
 	wg.Wait()

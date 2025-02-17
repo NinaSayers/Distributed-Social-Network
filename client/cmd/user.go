@@ -15,7 +15,7 @@ func (app *Application) listUsers() {
 }
 
 func (app *Application) showProfile() {
-	var id int
+	var id string
 	fmt.Print("ID de usuario: ")
 	fmt.Scan(&id)
 

@@ -15,7 +15,7 @@ type User struct {
 	UserID       string    `json:"user_id"`
 	Username     string    `json:"username"`
 	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
+	PasswordHash string    `json:"password_hash"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
@@ -25,7 +25,7 @@ type UserModel struct {
 }
 
 func (m *UserModel) Create(user *dto.CreateUserDTO) (int, error) {
-	stmt := `INSERT INTO users (user_id, username, email, password_hash) VALUES (?, ?, ?, ?)`
+	stmt := `INSERT INTO user (user_id, username, email, password_hash) VALUES (?, ?, ?, ?)`
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 	if err != nil {
@@ -49,7 +49,7 @@ func (m *UserModel) Authenticate(email string, password string) (*User, error) {
 
 	u := &User{}
 
-	stmt := "SELECT user_id, username, email, password_hash, created_at, updated_at  FROM users WHERE email = ?"
+	stmt := "SELECT user_id, username, email, password_hash, created_at, updated_at  FROM user WHERE email = ?"
 	err := m.DB.QueryRow(stmt, email).Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -73,7 +73,7 @@ func (m *UserModel) Authenticate(email string, password string) (*User, error) {
 
 func (m *UserModel) Get(user_id string) (*User, error) {
 	stmt := `SELECT user_id, username, email, password_hash, created_at, updated_at 
-			FROM users
+			FROM user
 			WHERE user_id = ?
 			`
 
@@ -97,7 +97,7 @@ func (m *UserModel) Get(user_id string) (*User, error) {
 
 func (m *UserModel) List() ([]*User, error) { //pueden haber otras condiciones. Por ahora solo se listaran 10 por orden de id
 	stmt := `SELECT user_id, username, email, password_hash, created_at, updated_at 
-			FROM users
+			FROM user
 			ORDER BY user_id DESC 
 			LIMIT 10
 			`
@@ -130,7 +130,7 @@ func (m *UserModel) List() ([]*User, error) { //pueden haber otras condiciones. 
 
 func (m *UserModel) Update(ctx context.Context, user *User) error {
 	query := `
-	 UPDATE users
+	 UPDATE user
 	 SET 
 	 username = ?, 
 	 email = ?, 
@@ -163,7 +163,7 @@ func (m *UserModel) Update(ctx context.Context, user *User) error {
 
 func (m *UserModel) Delete(ctx context.Context, userID string) error {
 	query := `
- 			DELETE FROM users
+ 			DELETE FROM user
  			WHERE user_id = ?
 			`
 	stmt, err := m.DB.PrepareContext(ctx, query)
@@ -191,7 +191,7 @@ func (m *UserModel) Delete(ctx context.Context, userID string) error {
 }
 
 func (m UserModel) GetByEmail(email string) (*User, error) {
-	query := `SELECT user_id, created_at, name, email, password_hash FROM users WHERE email = ?`
+	query := `SELECT user_id, created_at, name, email, password_hash FROM user WHERE email = ?`
 	var user User
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
