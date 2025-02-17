@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	//"net/http"
+	//"os"
 )
 
 func (app *Application) signUpComponent() {
@@ -60,10 +62,15 @@ func (app *Application) loginComponent() {
 
 func (app *Application) deleteUser() {
 	var confirm string
-	fmt.Print("Esta seguro que desea eliminar su cuenta? (S/n): ")
+	fmt.Print("Esta seguro que desea eliminar su cuenta? (s/n): ")
 	fmt.Scan(&confirm)
 
-	if confirm == "S" {
+	// if confirm != "s" || confirm != "S"{
+    //     fmt.Println("Eliminación de cuenta cancelada.")
+    //     return
+    // }
+
+	if confirm == "S" || confirm == "s" {
 		err := app.service.DeleteUser(app.user.UserID)
 		if err != nil {
 			fmt.Println("Error:", err)
@@ -72,4 +79,25 @@ func (app *Application) deleteUser() {
 		app.user = nil
 		app.token = ""
 	}
+
+	// // Agregar el token de autenticación
+	// req.Header.Set("Authorization", "Bearer "+app.token)
+	// // Enviar la solicitud
+	// client := &http.Client{}
+	// resp, err := client.Do(req)
+	// if err != nil {
+	//    fmt.Println("Error:", err)
+	//    return
+	// }
+	// defer resp.Body.Close()
+
+	// // Verificar la respuesta del servidor
+	// if resp.StatusCode != http.StatusOK {
+	//    fmt.Println("Error al eliminar la cuenta.")
+	//    return
+	// }
+
+	// // Cerrar la aplicación
+	// fmt.Println("Cuenta eliminada correctamente. Cerrando la aplicación...")
+	// os.Exit(0)
 }

@@ -177,7 +177,7 @@ func (m *UserModel) Delete(ctx context.Context, userID int) error {
     }
 
     _, err = tx.ExecContext(ctx, `
-        DELETE FROM followers WHERE follower_id = ? OR followed_id = ?
+        DELETE FROM relationships WHERE follower_id = ? OR followee_id = ?
     `, userID, userID)
     if err != nil {
         return fmt.Errorf("error deleting dependent followers: %w", err)
