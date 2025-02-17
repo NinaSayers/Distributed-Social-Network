@@ -156,30 +156,50 @@ func (m *UserModel) Update(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (m *UserModel) Delete(ctx context.Context, userID string) error {
-	query := `
- 			DELETE FROM user
- 			WHERE user_id = ?
-			`
-	stmt, err := m.DB.PrepareContext(ctx, query)
+func (m *UserModel) Delete(ctx context.Context, userID int) error {
+	// Iniciar una transacción
+	tx, err := m.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("error preparing delete statement: %w", err)
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	defer tx.Rollback() // Rollback en caso de error
+
+	// Eliminar registros dependientes (por ejemplo, mensajes y seguidores)
+	_, err = tx.ExecContext(ctx, `
+        DELETE FROM post WHERE user_id = ?
+    `, userID)
+	if err != nil {
+		return fmt.Errorf("error deleting dependent messages: %w", err)
 	}
 
-	defer stmt.Close()
-
-	result, err := stmt.ExecContext(ctx, userID)
+	_, err = tx.ExecContext(ctx, `
+        DELETE FROM followers WHERE follower_id = ? OR followed_id = ?
+    `, userID, userID)
 	if err != nil {
-		return fmt.Errorf("error executing delete statement: %w", err)
+		return fmt.Errorf("error deleting dependent followers: %w", err)
 	}
 
+	// Eliminar el usuario
+	result, err := tx.ExecContext(ctx, `
+        DELETE FROM user WHERE user_id = ?
+    `, userID)
+	if err != nil {
+		return fmt.Errorf("error deleting user: %w", err)
+	}
+
+	// Verificar si se eliminó algún registro
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("error getting rows affected: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("user not found") // or use your custom ErrNoRecord if defined
+		return ErrNoRecord
+	}
+
+	// Confirmar la transacción
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("error committing transaction: %w", err)
 	}
 
 	return nil

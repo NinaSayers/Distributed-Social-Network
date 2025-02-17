@@ -54,6 +54,7 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 	// http.Redirect(w, r, fmt.Sprintf("/user/%d", id), http.StatusSeeOther)
 }
 
+// ///////////////////////////////////////////////////////////////////////////////////////////
 func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var payload dto.LoginDTO
@@ -367,12 +368,17 @@ func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.R
 // 		return
 // 	}
 
-// 	w.WriteHeader(http.StatusOK) // or http.StatusNoContent
-// 	json.NewEncoder(w).Encode(map[string]string{"message": "Post deleted successfully"})
-// }
-// func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
-// 	w.Write([]byte("Getting users"))
-// }
+//		w.WriteHeader(http.StatusOK) // or http.StatusNoContent
+//		json.NewEncoder(w).Encode(map[string]string{"message": "Post deleted successfully"})
+//	}
+//
+//	func (app *application) GetTimelineHandler(w http.ResponseWriter, r *http.Request) {
+//		w.Write([]byte("Getting users"))
+//	}
+func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	// Aquí podrías agregar lógica adicional, como invalidar el token si es necesario.
+	app.writeJSON(w, http.StatusOK, map[string]string{"message": "Logged out successfully"}, nil)
+}
 
 // // ////////////////////////////////////////////////////////////////////////////////////////////
 // func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
