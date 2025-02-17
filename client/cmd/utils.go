@@ -30,8 +30,8 @@ func displayPosts(messages []Message) {
 		if i == 5 {
 			break
 		}
-		fmt.Printf("\n%d: %s\n", message.UserID, message.Content)
-		fmt.Printf("  📅 %s  🆔 %d\n ", message.CreatedAt, message.MessageID)
+		fmt.Printf("\n%s: %s\n", message.UserID, message.Content)
+		fmt.Printf("  📅 %s  🆔 %s\n ", message.CreatedAt, message.MessageID)
 	}
 	fmt.Println(strings.Repeat("-", 50))
 }
@@ -54,7 +54,7 @@ func displayRepost(message Message, reposter User, original User) {
 
 func displayProfileHeader(user User) {
 	fmt.Println(strings.Repeat("=", 50))
-	fmt.Printf("ID: %d  %s (%s)\n", user.UserID, user.UserName, user.Email)
+	fmt.Printf("ID: %s  %s (%s)\n", user.UserID, user.UserName, user.Email)
 	fmt.Printf("  🗓️  Joined %s\n", user.CreatedAt.Local())
 	// fmt.Printf("  📊 %d Following   👥 %d Followers\n", user.Following, user.Followers)
 	fmt.Println(strings.Repeat("=", 50))

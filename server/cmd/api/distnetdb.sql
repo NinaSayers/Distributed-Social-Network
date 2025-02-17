@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS relationship;
+DROP TABLE IF EXISTS follow;
 DROP TABLE IF EXISTS retweet;
 DROP TABLE IF EXISTS post;
 DROP TABLE IF EXISTS user;
@@ -24,15 +24,15 @@ CREATE TABLE post (
 );
 
 -- Crear tabla de relaciones (seguidores/seguidos)
-CREATE TABLE relationship (
-    relationship_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE follow (
+    follow_id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     followee_id TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES user(user_id) ON DELETE CASCADE,
     FOREIGN KEY (followee_id) REFERENCES user(user_id) ON DELETE CASCADE,
-    UNIQUE (follower_id, followee_id)
+    UNIQUE (user_id, followee_id)
 );
 
 -- Crear tabla de retweets
@@ -71,5 +71,5 @@ CREATE TABLE retweet (
 -- Verificar datos insertados
 SELECT * FROM user;
 SELECT * FROM post;
-SELECT * FROM relationship;
+SELECT * FROM follow;
 SELECT * FROM retweet;

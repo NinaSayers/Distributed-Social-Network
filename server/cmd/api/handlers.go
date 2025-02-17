@@ -381,36 +381,41 @@ func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // // ////////////////////////////////////////////////////////////////////////////////////////////
-// func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
-// 	var payload struct {
-// 		FollowerID int `json:"follower_id"`
-// 		FolloweeID int `json:"followee_id"`
-// 	}
+func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request) {
+	var payload dto.FollowUserDTO
 
-// 	err := app.readJSON(w, r, &payload)
-// 	if err != nil {
-// 		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
-// 		return
-// 	}
+	err := app.readJSON(w, r, &payload)
+	if err != nil {
+		app.errorResponse(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
 
-// 	defer r.Body.Close()
+	defer r.Body.Close()
 
-// 	if payload.FollowerID == 0 || payload.FolloweeID == 0 {
-// 		app.badRequestResponse(w, r, errors.New("follower_id y followee_id son requeridos"))
-// 		return
-// 	}
+	if payload.UserID == "" || payload.FolloweeID == "" {
+		app.badRequestResponse(w, r, errors.New("user_id y followee_id son requeridos"))
+		return
+	}
 
-// 	err = app.models.Relationship.FollowUser(payload.FollowerID, payload.FolloweeID)
-// 	if err != nil {
-// 		if errors.Is(err, models.ErrNoRecord) { // Assuming ErrNoRecord is defined in your models package
-// 			app.badRequestResponse(w, r, err)
-// 		} else {
-// 			app.serverError(w, err)
-// 		}
-// 		return
-// 		// w.Write([]byte("Getting users"))
-// 	}
-// }
+	enc, err := json.Marshal(payload)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	_, err = app.peer.Store("follow", &enc)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+}
+
 // func (app *application) UnfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 // 	followee_id, err := strconv.Atoi(r.PathValue("id"))
 // 	if err != nil {
@@ -458,33 +463,68 @@ func (app *application) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 // 		return
 // 	}
 
-// 	err = json.NewEncoder(w).Encode(followers)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
-// 	//w.Write([]byte("Getting users"))
-// }
-// func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
-// 	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
-// 	if err != nil {
-// 		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
-// 		return
-// 	}
+//		err = json.NewEncoder(w).Encode(followers)
+//		if err != nil {
+//			app.serverError(w, err)
+//			return
+//		}
+//		//w.Write([]byte("Getting users"))
+//	}
+func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido"))
+		return
+	}
 
-// 	followers, err := app.models.Relationship.ListFollowing(userID)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
+	// users, err := app.models.Message.ListByUser(int64(id))
+	followUsersBytes, err := app.peer.GetValue("follow:user", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
 
-// 	err = json.NewEncoder(w).Encode(followers)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
-// 	//w.Write([]byte("Getting users"))
-// }
+	var followUserIDs []string
+	err = json.Unmarshal(followUsersBytes, &followUserIDs)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+	app.infoLog.Printf("Post retrived %v\n", len(followUserIDs))
+
+	following := []*dto.AuthUserDTO{}
+	for _, followId := range followUserIDs {
+		uBytes, err := app.peer.GetValue("user", followId)
+		if err != nil {
+			if errors.Is(err, models.ErrNoRecord) {
+				app.badRequestResponse(w, r, err)
+			} else {
+				app.serverError(w, err)
+			}
+			continue
+		}
+
+		var u dto.AuthUserDTO
+		err = json.Unmarshal(uBytes, &u)
+		if err != nil {
+			app.serverError(w, err) //arreglar esto con el error correspondiente
+			continue
+		}
+
+		following = append(following, &u)
+	}
+
+	err = json.NewEncoder(w).Encode(following)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	//w.Write([]byte("Getting users"))
+}
 
 // // ///////////////////////////////////////////////////////////////////////////////////////////
 // func (app *application) RetweetHandler(w http.ResponseWriter, r *http.Request) {

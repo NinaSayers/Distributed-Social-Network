@@ -86,6 +86,23 @@ func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error
 
 		bytes, err := json.Marshal(newPost)
 		return &bytes, err
+
+	case "follow":
+		var follow dto.FollowUserDTO
+		err := json.Unmarshal(*data, &follow)
+		if err != nil {
+			return nil, err
+		}
+		follow.FollowId = base58.Encode(id)
+		fmt.Printf("Storing follow with id %s \n", follow.FollowId)
+
+		err = s.Relationship.FollowUser(&follow)
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+
 	}
 	return nil, nil
 }
@@ -140,7 +157,17 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 		}
 		response, err := json.Marshal(messages)
 		return &response, err
+
+	case "follow:user":
+		messages, err := s.Relationship.ListFollowing(base58.Encode(id))
+		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
+			return nil, err
+		}
+		response, err := json.Marshal(messages)
+		return &response, err
 	}
+
 	return nil, errors.New("entity not found")
 }
 

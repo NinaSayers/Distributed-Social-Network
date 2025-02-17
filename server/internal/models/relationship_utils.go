@@ -2,9 +2,9 @@ package models
 
 import "database/sql"
 
-func CheckRelationshipExistence(followerID int, followeeID int, db *sql.DB) (int, error) {
+func CheckRelationshipExistence(followerID string, followeeID string, db *sql.DB) (int, error) {
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM relationships WHERE follower_id = ? AND followee_id = ?", followerID, followeeID).Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM follow WHERE user_id = ? AND followee_id = ?", followerID, followeeID).Scan(&count)
 	if err != nil {
 		return 0, NewErrDatabaseOperationFailed(err)
 	}
@@ -23,9 +23,9 @@ func CheckRelationshipExistenceByID(relationshipID int, db *sql.DB) error {
 	return nil
 }
 
-func CheckUserExistenceAsFollower(userID int, db *sql.DB) error {
+func CheckUserExistenceAsFollower(userID string, db *sql.DB) error {
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM relationships WHERE follower_id = ?", userID).Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM follow WHERE user_id = ?", userID).Scan(&count)
 	if err != nil {
 		return NewErrUserCheck(err)
 	}

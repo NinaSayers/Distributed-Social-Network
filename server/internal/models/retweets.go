@@ -6,9 +6,9 @@ import (
 )
 
 type Retweet struct {
-	RetweetID int       `json:"retweet_id"`
-	UserID    int       `json:"user_id"`
-	MessageID int       `json:"message_id"`
+	RetweetID string    `json:"retweet_id"`
+	UserID    string    `json:"user_id"`
+	PostID    string    `json:"post_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -17,57 +17,57 @@ type RetweetModel struct {
 }
 
 // RetweetModel methods
-func (m *RetweetModel) CreateRetweet(userID, messageID int) error {
+func (m *RetweetModel) CreateRetweet(userID, messageID string) error {
 	err := CheckUserExistence(userID, m.DB)
 	if err != nil {
-	 return err
+		return err
 	}
-   
+
 	err = CheckMessageExistence(messageID, m.DB)
 	if err != nil {
-	 return err
+		return err
 	}
-   
+
 	exist, err := CheckRetweetExistence(userID, messageID, m.DB)
 	if err != nil {
-	 	return err
+		return err
 	}
 	if exist > 0 {
-	 	return ErrRelationshipExists
+		return ErrRelationshipExists
 	}
-   
+
 	stmt := `INSERT INTO retweets (user_id, message_id, created_at) VALUES (?, ?, ?)`
 	_, err = m.DB.Exec(stmt, userID, messageID, time.Now())
 	if err != nil {
-	 	return NewErrDatabaseOperationFailed(err)
+		return NewErrDatabaseOperationFailed(err)
 	}
-   
+
 	return nil
 }
 
-func (m *RetweetModel) UndoRetweet(userID, messageID int) error {
+func (m *RetweetModel) UndoRetweet(userID, messageID string) error {
 
 	exists, err := CheckRetweetExistence(userID, messageID, m.DB)
 	if err != nil {
-	 	return err
+		return err
 	}
 	if exists == 0 {
-	 	return ErrNoRecord
+		return ErrNoRecord
 	}
 
 	stmt := `DELETE FROM retweets WHERE user_id = ? AND message_id = ?`
 	result, err := m.DB.Exec(stmt, userID, messageID)
 	if err != nil {
-	 	return NewErrDatabaseOperationFailed(err)
+		return NewErrDatabaseOperationFailed(err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-	 	return NewErrDatabaseOperationFailed(err)
+		return NewErrDatabaseOperationFailed(err)
 	}
 	if rowsAffected == 0 {
-	 	return ErrNoRecord
+		return ErrNoRecord
 	}
-   
+
 	return nil
 }
