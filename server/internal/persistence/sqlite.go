@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -224,4 +225,27 @@ func (s *SqliteDb) getTableKeys(tableName string) ([][]byte, error) {
 	}
 
 	return tableKeys, nil
+}
+
+func (s *SqliteDb) Delete(entity string, id []byte) error {
+	fmt.Printf("INFRA DELETE %s - %s\n", entity, base58.Encode(id))
+	switch entity {
+	case "user":
+		ctx := context.Background()
+		userId := base58.Encode(id)
+		err := s.User.Delete(ctx, userId)
+		return err
+
+	case "post":
+		postId := base58.Encode(id)
+		err := s.Post.Delete(postId)
+		return err
+
+	case "follow":
+		followId := base58.Encode(id)
+		err := s.Relationship.Delete(followId)
+		return err
+
+	}
+	return errors.New("INFRA invalid entity")
 }

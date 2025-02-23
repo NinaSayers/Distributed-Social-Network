@@ -74,7 +74,7 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// user, err := app.models.User.Authenticate(payload.Email, payload.Password)
 	hash := sha256.Sum256([]byte(payload.Email)) // More secure hash
-	id := base58.Encode(hash[:])[:22]
+	id := base58.Encode(hash[:])
 
 	app.infoLog.Printf("Email %s encripted %s \n", payload.Email, id)
 
@@ -291,32 +291,43 @@ func (app *application) CreateMessageHandler(w http.ResponseWriter, r *http.Requ
 	//w.Write([]byte("Getting users"))
 }
 
-// func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request) {
 
-// 	id, err := strconv.Atoi(r.PathValue("id"))
-// 	if err != nil {
-// 		app.badRequestResponse(w, r, fmt.Errorf("ID de mensaje inválido: %w", err))
-// 		return
-// 	}
+	id := r.PathValue("id")
+	if id == "" {
+		app.badRequestResponse(w, r, errors.New("missing message id"))
+		return
+	}
 
-// 	message, err := app.models.Message.Get(id)
-// 	if err != nil {
-// 		if errors.Is(err, models.ErrNoRecord) {
-// 			app.notFound(w)
-// 		} else {
-// 			app.serverError(w, err)
-// 		}
-// 		return
-// 	}
+	messageBytes, err := app.peer.GetValue("post", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	err = json.NewEncoder(w).Encode(message)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 	}
+	app.infoLog.Printf("Mensaje obtenido %s", string(messageBytes))
 
-// 	//w.Write([]byte("Getting users"))
-// }
+	var post models.Post
+	err = json.Unmarshal(messageBytes, &post)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+
+	app.infoLog.Printf("Mensaje  %s", post.Content)
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(post)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	//w.Write([]byte("Getting users"))
+}
 
 func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")

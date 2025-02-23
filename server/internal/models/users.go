@@ -156,7 +156,7 @@ func (m *UserModel) Update(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (m *UserModel) Delete(ctx context.Context, userID int) error {
+func (m *UserModel) Delete(ctx context.Context, userID string) error {
 	// Iniciar una transacción
 	tx, err := m.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -173,7 +173,7 @@ func (m *UserModel) Delete(ctx context.Context, userID int) error {
 	}
 
 	_, err = tx.ExecContext(ctx, `
-        DELETE FROM followers WHERE follower_id = ? OR followed_id = ?
+        DELETE FROM followers WHERE user_id = ? OR followee_id = ?
     `, userID, userID)
 	if err != nil {
 		return fmt.Errorf("error deleting dependent followers: %w", err)

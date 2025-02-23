@@ -1,6 +1,6 @@
 module github.com/NinaSayers/Distributed-Social-Network/dns
 
-go 1.23.5
+go 1.24.0
 
 require github.com/miekg/dns v1.1.63
 

@@ -152,3 +152,22 @@ func (m *RelationshipModel) ListFollowing(userID string) ([]*User, error) {
 
 	return users, nil
 }
+
+func (m *RelationshipModel) Delete(followId string) error {
+
+	res, err := m.DB.Exec("DELETE FROM follow WHERE follow_id = ?", followId)
+	if err != nil {
+		return NewErrDatabaseOperationFailed(err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return NewErrDatabaseOperationFailed(err)
+	}
+
+	if rowsAffected == 0 {
+		return ErrNoRecord
+	}
+
+	return nil
+}

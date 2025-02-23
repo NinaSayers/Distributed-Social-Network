@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/miekg/dns"
 	"github.com/NinaSayers/Distributed-Social-Network/dns/utils"
+	"github.com/miekg/dns"
 )
 
 var broadcastPort map[string]int = map[string]int{
@@ -23,9 +23,9 @@ func (h *handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 	case dns.TypeA:
 		msg.Authoritative = true
 		domain := msg.Question[0].Name
-		//fmt.Println(domain)
+		fmt.Println(domain)
 		IP, err := h.broadcast(broadcastPort[domain])
-		//fmt.Println("IP Found:", IP)
+		fmt.Println("IP Found:", IP)
 		if err == nil {
 			msg.Answer = append(msg.Answer, &dns.A{
 				Hdr: dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 60},
@@ -39,7 +39,7 @@ func (h *handler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 func (h *handler) broadcast(port int) (net.IP, error) {
 
 	raddr := net.UDPAddr{
-		IP:   net.IPv4(255, 255, 255, 255),
+		IP:   net.IPv4(10, 0, 10, 255),
 		Port: port,
 	}
 
@@ -85,6 +85,7 @@ func (h *handler) broadcast(port int) (net.IP, error) {
 }
 
 func main() {
+	log.Println("Starting DNS")
 	srv := &dns.Server{Addr: ":53", Net: "udp"}
 	srv.Handler = &handler{}
 	if err := srv.ListenAndServe(); err != nil {

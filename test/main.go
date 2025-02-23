@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	k := 5
+	k := 3
 	networkName := "test_kademlia"
 	imageName := "test"
 	workdir := "/app"
@@ -27,19 +27,20 @@ func main() {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			containerName := fmt.Sprintf("node%d", i)
+			containerName := fmt.Sprintf("client%d", i)
 			dbVolume := fmt.Sprintf("db_%s:/app/data", containerName)
 			cmd := exec.Command(
 				"docker", "run",
 				"-d",
 				"--network", networkName,
 				"--network-alias", containerName,
+				// "--hostname", "0.0.0.0",
 				"-v", volume,
 				"-v", dbVolume, // Volumen único para la DB
 				"-w", workdir,
 				"--name", containerName,
 				imageName,
-				"go", "run", "./server/cmd/api",
+				"sh",
 			)
 			err := cmd.Start()
 			if err != nil {

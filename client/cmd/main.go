@@ -10,7 +10,9 @@ var baseURL string
 func init() {
 	baseURL = os.Getenv("SERVER_URL")
 	if baseURL == "" {
-		baseURL = "http://10.0.10.6:4000"
+		baseURL = "http://api.distnet.com."
+		// baseURL = "http://api.distnet.com"
+		// baseURL = "http://10.0.10.2:4000"
 		// baseURL = "http://localhost:4000"
 	}
 }

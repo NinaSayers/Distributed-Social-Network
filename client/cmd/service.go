@@ -231,7 +231,7 @@ func (s *Service) ListUserMessages(userID string) ([]Message, error) {
 // FollowUser sends a request to follow a user
 func (s *Service) FollowUser(followerID, followeeID string) error {
 	payload := map[string]string{
-		"follower_id": followerID,
+		"user_id":     followerID,
 		"followee_id": followeeID,
 	}
 	body, _ := json.Marshal(payload)

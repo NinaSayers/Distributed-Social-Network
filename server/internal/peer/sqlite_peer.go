@@ -36,20 +36,25 @@ func (p *SqlitePeer) Store(entity string, data *[]byte) (string, error) {
 	}
 	fmt.Printf("Peering entity %s \n", entity)
 
-	var id string
-	switch entity {
-	case "user":
+	hash := sha256.Sum256(*data) // More secure hash
+	id := base58.Encode(hash[:])
+	if entity == "user" {
 		email, ok := payload["email"].(string)
 		if !ok {
 			return "", fmt.Errorf("email is not a string")
 		}
+
 		hash := sha256.Sum256([]byte(email)) // More secure hash
-		id = base58.Encode(hash[:])[:22]
+		id = base58.Encode(hash[:])
 		fmt.Printf("Peering entity %s, id %s, email %s \n", entity, email)
 
-	default:
-		hash := sha256.Sum256(*data) // More secure hash
-		id = base58.Encode(hash[:])[:22]
+	} else {
+		userId, ok := payload["user_id"].(string)
+		if !ok {
+			return "", fmt.Errorf("Secundary entity without a main reference")
+		}
+
+		id = id + userId
 	}
 
 	_, err = p.StoreValue(entity, id, data) // Store in Kademlia

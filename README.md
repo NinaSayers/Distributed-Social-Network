@@ -43,3 +43,4 @@ to get the necesary dependecies for this project to run succesfully.
 | **GET**    | `/users/{id}/stats`             | Get statistics for a specific user (e.g., tweets, likes).  |
 
 
+docker run -it --network test_kademlia --network-alias client --dns 10.0.10.2 -v "$(pwd)":/app -w /app --name client test
