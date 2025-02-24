@@ -23,6 +23,9 @@ WORKDIR /root/
 COPY --from=builder /app/server .
 COPY startup.sh /root/startup.sh
 
+# **COPIA EL ARCHIVO distnetdb.sql DESDE LA IMAGEN DE CONSTRUCCIÓN**
+COPY --from=builder /app/server/cmd/api/distnetdb.sql /root/server/cmd/api/distnetdb.sql
+
 RUN chmod +x /root/startup.sh
 
 # Expone el puerto en el que el servidor escuchará

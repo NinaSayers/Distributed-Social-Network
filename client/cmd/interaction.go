@@ -1,61 +1,37 @@
 package main
 
-import (
-	"fmt"
-)
+// import (
+// 	"fmt"
+// )
 
-func (app *Application) followUser() {
-	var id string
-	fmt.Print("ID de usuario a seguir: ")
-	fmt.Scan(&id)
-
-	err := app.service.FollowUser(app.user.UserID, id)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("Ahora sigues a este usuario")
+func (app *Application) followUser(userID string) error {
+    err := app.service.FollowUser(app.user.UserID, userID)
+    if err != nil {
+        return err
+    }
+    return nil
 }
 
-func (app *Application) unfollowUser() {
-	var id string
-	fmt.Print("ID de usuario a dejar de seguir: ")
-	fmt.Scan(&id)
-
-	err := app.service.UnfollowUser(app.user.UserID, id)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	// paylaod.UserId = client.UserID
-
-	fmt.Println("Ahora no sigues a este usuario")
+func (app *Application) unfollowUser(userID string) error {
+    err := app.service.UnfollowUser(app.user.UserID, userID)
+    if err != nil {
+        return err
+    }
+    return nil
 }
 
-func (app *Application) listFollowers() {
-	var id string
-	fmt.Print("ID de usuario: ")
-	fmt.Scan(&id)
-
-	users, err := app.service.ListFollowers(id)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	displayUsers(users)
-
+func (app *Application) listFollowers(userID string) ([]User, error) {
+    users, err := app.service.ListFollowers(userID)
+    if err != nil {
+        return nil, err
+    }
+    return users, nil
 }
 
-func (app *Application) listFollowing() {
-	var id string
-	fmt.Print("ID de usuario: ")
-	fmt.Scan(&id)
-
-	users, err := app.service.ListFollowing(id)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	displayUsers(users)
-
+func (app *Application) listFollowing(userID string) ([]User, error) {
+    users, err := app.service.ListFollowing(userID)
+    if err != nil {
+        return nil, err
+    }
+    return users, nil
 }

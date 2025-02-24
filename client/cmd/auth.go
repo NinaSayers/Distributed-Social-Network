@@ -1,45 +1,29 @@
 package main
 
-import (
-	"fmt"
-)
+// import (
+// 	"fmt"
+// )
 
-func (app *Application) signUpComponent() {
-	var username, email, password string
-	fmt.Print("Nombre de usuario: ")
-	fmt.Scan(&username)
-
-	fmt.Print("Email: ")
-	fmt.Scan(&email)
-
-	fmt.Print("Password: ")
-	fmt.Scan(&password)
-
-	_, err := app.service.CreateUser(username, email, password)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println("Usuario creado con éxito")
+func (app *Application) signUpComponent(username, email, password string) error {
+    _, err := app.service.CreateUser(username, email, password)
+    if err != nil {
+        return err
+    }
+    return nil
 }
 
-func (app *Application) loginComponent() {
-	var email, password string
-	fmt.Print("Correo de usuario: ")
-	fmt.Scan(&email)
-	fmt.Print("Contraseña: ")
-	fmt.Scan(&password)
+func (app *Application) loginComponent(email, password string) error {
+    // Llamar al servicio para autenticar al usuario
+    client, err := app.service.Login(email, password)
+    if err != nil {
+        return err // Devolver el error para manejarlo en la interfaz gráfica
+    }
 
-	client, err := app.service.Login(email, password)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
+    // Actualizar el estado de la aplicación con el usuario autenticado
+    app.user = &client.User
+    app.token = client.Token
 
-	app.user = &client.User
-	app.token = client.Token
-
-	fmt.Printf("Bienvenido %s \n", app.user.UserName)
+    return nil // Devolver nil si no hay errores
 }
 
 // func (app *Application) logoutComponent() {
@@ -58,18 +42,13 @@ func (app *Application) loginComponent() {
 //     //app.showInitialMenu() // Redirigir al menú inicial (para esto hay q modificar la func main del client)
 // }
 
-func (app *Application) deleteUser() {
-	var confirm string
-	fmt.Print("Esta seguro que desea eliminar su cuenta? (S/n): ")
-	fmt.Scan(&confirm)
+func (app *Application) deleteUser() error {
+    err := app.service.DeleteUser(app.user.UserID)
+    if err != nil {
+        return err
+    }
 
-	if confirm == "S" {
-		err := app.service.DeleteUser(app.user.UserID)
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
-		}
-		app.user = nil
-		app.token = ""
-	}
+    app.user = nil
+    app.token = ""
+    return nil
 }

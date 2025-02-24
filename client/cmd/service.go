@@ -310,21 +310,44 @@ func (s *Service) ListFollowing(user_id string) ([]User, error) {
 	return users, nil
 
 }
-func (s *Service) GetMessage(id string) (*Message, error) {
-	id_string := id
-	resp, err := s.client.Get(baseURL + "/messages/" + id_string)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
+func (s *Service) GetMessage(messageID string) (*Message, error) {
+    // Realizar una solicitud HTTP GET al servidor para obtener el mensaje
+    resp, err := s.client.Get(baseURL + "/messages/" + messageID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to send request: %w", err)
+    }
+    defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to retrieve message: status %d", resp.StatusCode)
-	}
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("failed to retrieve message: status %d", resp.StatusCode)
+    }
 
-	var message Message
-	if err := json.NewDecoder(resp.Body).Decode(&message); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-	return &message, nil
+    // Decodificar la respuesta JSON en un mensaje
+    var message Message
+    if err := json.NewDecoder(resp.Body).Decode(&message); err != nil {
+        return nil, fmt.Errorf("failed to decode response: %w", err)
+    }
+
+    return &message, nil
+}
+
+func (s *Service) GetUserMessages(userID string) ([]Message, error) {
+    // Realizar una solicitud HTTP GET al servidor para obtener los mensajes del usuario
+    resp, err := s.client.Get(baseURL + "/users/" + userID + "/messages")
+    if err != nil {
+        return nil, fmt.Errorf("failed to send request: %w", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("failed to retrieve messages: status %d", resp.StatusCode)
+    }
+
+    // Decodificar la respuesta JSON en una lista de mensajes
+    var messages []Message
+    if err := json.NewDecoder(resp.Body).Decode(&messages); err != nil {
+        return nil, fmt.Errorf("failed to decode response: %w", err)
+    }
+
+    return messages, nil
 }
