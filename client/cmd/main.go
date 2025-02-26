@@ -35,8 +35,8 @@ func main() {
     // Inicializar la aplicación
     app := Application{service: NewService()}
 
-    // Mostrar la pantalla de inicio (login/registro)
-    showLoginScreen(myWindow, &app)
+    // Mostrar el menú de inicio
+    showInitialMenu(myWindow, &app)
 
     // Mostrar la ventana
     myWindow.ShowAndRun()
