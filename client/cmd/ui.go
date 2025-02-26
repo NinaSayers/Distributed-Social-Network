@@ -23,7 +23,7 @@ func showInitialMenu(window fyne.Window, app *Application) {
     })
 
     content := container.NewVBox(
-        widget.NewLabel("Bienvenido a la Red Social"),
+        widget.NewLabel("Bienvenido a Distnet"),
         loginButton,
         signUpButton,
         exitButton,

@@ -1,5 +1,5 @@
 # Usa una imagen base de Go para construir el binario
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app
@@ -24,7 +24,7 @@ COPY --from=builder /app/server .
 COPY startup.sh /root/startup.sh
 
 # **COPIA EL ARCHIVO distnetdb.sql DESDE LA IMAGEN DE CONSTRUCCIÓN**
-COPY --from=builder /app/server/cmd/api/distnetdb.sql /root/server/cmd/api/distnetdb.sql
+COPY --from=builder /app/cmd/api/distnetdb.sql /root/cmd/api/distnetdb.sql
 
 RUN chmod +x /root/startup.sh
 
