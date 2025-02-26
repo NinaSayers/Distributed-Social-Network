@@ -13,7 +13,7 @@ func CheckRelationshipExistence(followerID string, followeeID string, db *sql.DB
 
 func CheckRelationshipExistenceByID(relationshipID int, db *sql.DB) error {
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM relationships WHERE id = ?", relationshipID).Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM follow WHERE id = ?", relationshipID).Scan(&count)
 	if err != nil {
 		return NewErrUserCheck(err)
 	}
@@ -35,9 +35,9 @@ func CheckUserExistenceAsFollower(userID string, db *sql.DB) error {
 	return nil
 }
 
-func CheckUserExistenceAsFollowee(userID int, db *sql.DB) error {
+func CheckUserExistenceAsFollowee(userID string, db *sql.DB) error {
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM relationships WHERE followee_id = ?", userID).Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM follow WHERE followee_id = ?", userID).Scan(&count)
 	if err != nil {
 		return NewErrUserCheck(err)
 	}

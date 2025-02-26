@@ -44,3 +44,5 @@ to get the necesary dependecies for this project to run succesfully.
 
 
 docker run -it --network test_kademlia --network-alias client --dns 10.0.10.2 -v "$(pwd)":/app -w /app --name client test
+
+docker run -d --network test_kademlia --network-alias node1 -v "$(pwd)":/app -v db_node1:/app/data -w /app --name node1 test go run ./server/cmd/api

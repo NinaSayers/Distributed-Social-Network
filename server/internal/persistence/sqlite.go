@@ -160,12 +160,21 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 		return &response, err
 
 	case "follow:user":
-		messages, err := s.Relationship.ListFollowing(base58.Encode(id))
+		users, err := s.Relationship.ListFollowing(base58.Encode(id))
 		if err != nil {
 			fmt.Printf("INFRA READ ERROR %s\n", err)
 			return nil, err
 		}
-		response, err := json.Marshal(messages)
+		response, err := json.Marshal(users)
+		return &response, err
+
+	case "follower:user":
+		users, err := s.Relationship.ListFollowers(base58.Encode(id))
+		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
+			return nil, err
+		}
+		response, err := json.Marshal(users)
 		return &response, err
 	}
 

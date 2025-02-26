@@ -39,7 +39,7 @@ func (m *RelationshipModel) FollowUser(follow *dto.FollowUserDTO) error {
 		return ErrRelationshipExists
 	}
 
-	stmt := `INSERT INTO follow (follow_id, user_id, followee_id, created_at) VALUES (?, ?, ?)`
+	stmt := `INSERT INTO follow (follow_id, user_id, followee_id) VALUES (?, ?, ?)`
 	_, err = m.DB.Exec(stmt, follow.FollowId, follow.UserID, follow.FolloweeID, time.Now())
 	if err != nil {
 		return NewErrDatabaseOperationFailed(err)
@@ -74,9 +74,9 @@ func (m *RelationshipModel) UnfollowUser(userId, followeeId string) error {
 	return nil
 }
 
-func (m *RelationshipModel) ListFollowers(userID int) ([]string, error) {
+func (m *RelationshipModel) ListFollowing(userID string) ([]string, error) {
 
-	err := CheckUserExistenceAsFollowee(userID, m.DB)
+	err := CheckUserExistenceAsFollower(userID, m.DB)
 
 	if err != nil {
 		if errors.Is(err, ErrNoRecord) {
@@ -112,34 +112,32 @@ func (m *RelationshipModel) ListFollowers(userID int) ([]string, error) {
 
 	return users, nil
 }
+func (m *RelationshipModel) ListFollowers(userID string) ([]string, error) {
 
-func (m *RelationshipModel) ListFollowing(userID string) ([]*User, error) {
+	err := CheckUserExistenceAsFollowee(userID, m.DB)
 
-	err := CheckUserExistenceAsFollower(userID, m.DB)
 	if err != nil {
 		if errors.Is(err, ErrNoRecord) {
-			return []*User{}, nil
+			return []string{}, nil
 		}
 		return nil, err
 	}
 
 	stmt := `
-		SELECT u.user_id, u.username, u.email
-		FROM users u
-		JOIN relationships r ON u.user_id = r.followee_id
-		WHERE r.follower_id = ?
+		SELECT user_id
+		FROM follow
+		WHERE followee_id = ?
 		`
-
 	rows, err := m.DB.Query(stmt, userID)
 	if err != nil {
 		return nil, NewErrDatabaseOperationFailed(err)
 	}
 	defer rows.Close()
 
-	users := []*User{}
+	users := []string{}
 	for rows.Next() {
-		u := &User{}
-		err := rows.Scan(&u.UserID, &u.Username, &u.Email)
+		var u string
+		err := rows.Scan(&u)
 		if err != nil {
 			return nil, NewErrDatabaseOperationFailed(err)
 		}

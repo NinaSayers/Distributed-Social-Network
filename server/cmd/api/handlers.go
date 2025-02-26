@@ -450,37 +450,73 @@ func (app *application) FollowUserHandler(w http.ResponseWriter, r *http.Request
 // 		return
 // 	}
 
-// 	err = app.models.Relationship.UnfollowUser(payload.UserID, followee_id)
-// 	if err != nil {
-// 		if errors.Is(err, models.ErrNoRecord) {
-// 			app.badRequestResponse(w, r, err)
-// 		} else {
-// 			app.serverError(w, err)
-// 		}
-// 		return
-// 		// w.Write([]byte("Getting users"))
-// 	}
-// }
-// func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Request) {
-// 	userID, err := strconv.Atoi(r.PathValue("id")) //Obtener userID de la ruta.  Asumiendo que la ruta es /followers/{id}
-// 	if err != nil {
-// 		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido: %w", err))
-// 		return
-// 	}
-
-// 	followers, err := app.models.Relationship.ListFollowers(userID)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
-
-//		err = json.NewEncoder(w).Encode(followers)
+//		err = app.models.Relationship.UnfollowUser(payload.UserID, followee_id)
 //		if err != nil {
-//			app.serverError(w, err)
+//			if errors.Is(err, models.ErrNoRecord) {
+//				app.badRequestResponse(w, r, err)
+//			} else {
+//				app.serverError(w, err)
+//			}
 //			return
+//			// w.Write([]byte("Getting users"))
 //		}
-//		//w.Write([]byte("Getting users"))
 //	}
+func (app *application) ListFollowersHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido"))
+		return
+	}
+
+	// users, err := app.models.Message.ListByUser(int64(id))
+	followerUsersBytes, err := app.peer.GetValue("follower:user", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	var followUserIDs []string
+	err = json.Unmarshal(followerUsersBytes, &followUserIDs)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+	app.infoLog.Printf("Followers retrived %v\n", len(followUserIDs))
+
+	followers := []*dto.AuthUserDTO{}
+	for _, followId := range followUserIDs {
+		uBytes, err := app.peer.GetValue("user", followId)
+		if err != nil {
+			if errors.Is(err, models.ErrNoRecord) {
+				app.badRequestResponse(w, r, err)
+			} else {
+				app.serverError(w, err)
+			}
+			continue
+		}
+
+		var u dto.AuthUserDTO
+		err = json.Unmarshal(uBytes, &u)
+		if err != nil {
+			app.serverError(w, err) //arreglar esto con el error correspondiente
+			continue
+		}
+
+		followers = append(followers, &u)
+	}
+
+	err = json.NewEncoder(w).Encode(followers)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	//w.Write([]byte("Getting users"))
+}
+
 func (app *application) ListFollowingHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
