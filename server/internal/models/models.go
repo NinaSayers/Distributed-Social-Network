@@ -6,7 +6,7 @@ type Models struct {
 	User         *UserModel
 	Post         *PostModel
 	Relationship *RelationshipModel
-	Retweet      *RetweetModel
+	Repost       *RepostModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -14,6 +14,6 @@ func NewModels(db *sql.DB) Models {
 		User:         &UserModel{DB: db},
 		Post:         &PostModel{DB: db},
 		Relationship: &RelationshipModel{DB: db},
-		Retweet:      &RetweetModel{DB: db},
+		Repost:       &RepostModel{DB: db},
 	}
 }

@@ -88,6 +88,23 @@ func (s *SqliteDb) Store(entity string, id []byte, data *[]byte) (*[]byte, error
 		bytes, err := json.Marshal(newPost)
 		return &bytes, err
 
+	case "repost":
+		var repost dto.CreateRepostDTO
+		err := json.Unmarshal(*data, &repost)
+		if err != nil {
+			return nil, err
+		}
+		repost.RepostID = base58.Encode(id)
+		fmt.Printf("Storing post with id %s \n", repost.RepostID)
+
+		newPost, err := s.Repost.CreateRepost(&repost)
+		if err != nil {
+			return nil, err
+		}
+
+		bytes, err := json.Marshal(newPost)
+		return &bytes, err
+
 	case "follow":
 		var follow dto.FollowUserDTO
 		err := json.Unmarshal(*data, &follow)
@@ -148,6 +165,15 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 			return nil, err
 		}
 		response, err := json.Marshal(message)
+		return &response, err
+
+	case "repost":
+		repost, err := s.Repost.Get(base58.Encode(id))
+		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
+			return nil, err
+		}
+		response, err := json.Marshal(repost)
 		return &response, err
 
 	case "post:user":
@@ -248,6 +274,11 @@ func (s *SqliteDb) Delete(entity string, id []byte) error {
 	case "post":
 		postId := base58.Encode(id)
 		err := s.Post.Delete(postId)
+		return err
+
+	case "repost":
+		postId := base58.Encode(id)
+		err := s.Repost.Delete(postId)
 		return err
 
 	case "follow":

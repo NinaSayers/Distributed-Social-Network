@@ -1,5 +1,5 @@
 DROP TABLE IF EXISTS follow;
-DROP TABLE IF EXISTS retweet;
+DROP TABLE IF EXISTS repost;
 DROP TABLE IF EXISTS post;
 DROP TABLE IF EXISTS user;
 
@@ -36,8 +36,8 @@ CREATE TABLE follow (
 );
 
 -- Crear tabla de retweets
-CREATE TABLE retweet (
-    retweet_id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE repost (
+    repost_id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id TEXT NOT NULL,
     post_id TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -72,4 +72,4 @@ CREATE TABLE retweet (
 SELECT * FROM user;
 SELECT * FROM post;
 SELECT * FROM follow;
-SELECT * FROM retweet;
+SELECT * FROM repost;
