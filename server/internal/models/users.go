@@ -32,7 +32,7 @@ func (m *UserModel) Create(user *dto.CreateUserDTO) (*User, error) {
 		return nil, err
 	}
 
-	_, err = m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, hashedPassword)
+	_, err = m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, string(hashedPassword))
 	if err != nil {
 		return nil, err
 	}
