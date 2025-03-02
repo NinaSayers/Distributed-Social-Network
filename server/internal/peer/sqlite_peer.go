@@ -22,7 +22,7 @@ func InitSqlitePeer(ip string, port, bootPort int, dbPath string, script string,
 }
 
 func NewSqlitePeer(ip string, port, bootstrapPort int, dbPath string, script string, isBootstrapNode bool) *SqlitePeer {
-	db := persistence.NewSqliteDb(dbPath, script) // Initialize SQLite DB
+	db := persistence.NewSqliteDb(dbPath, script)
 	newPeer := kademlia.NewNode(ip, port, bootstrapPort, db, isBootstrapNode)
 
 	return &SqlitePeer{*newPeer}
