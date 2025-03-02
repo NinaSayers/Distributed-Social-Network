@@ -11,6 +11,7 @@ CREATE TABLE user (
     password_hash TEXT NOT NULL,
     name TEXT,
     bio TEXT,
+    avatar TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

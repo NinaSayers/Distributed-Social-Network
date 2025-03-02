@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
+	"sync"
 
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/models"
@@ -13,9 +15,91 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// func (app *application) feed(w http.ResponseWriter, r *http.Request) {
-// 	w.Write([]byte("Getting feed"))
-// }
+func (app *application) GetFeed(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		app.badRequestResponse(w, r, fmt.Errorf("ID de usuario inválido"))
+		return
+	}
+
+	ownPostsBytes, err := app.peer.GetValue("post:user", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	var ownPosts []dto.HPost
+	err = json.Unmarshal(ownPostsBytes, &ownPosts)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	followUsersBytes, err := app.peer.GetValue("follow:user", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	var followUserIDs []string
+	err = json.Unmarshal(followUsersBytes, &followUserIDs)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+	app.infoLog.Printf("Users retrived %v\n", len(followUserIDs))
+
+	var posts []dto.HPost
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for _, followId := range followUserIDs {
+		wg.Add(1)
+		go func(followId string) {
+			defer wg.Done()
+			postsBytes, err := app.peer.GetValue("post:user", followId)
+			if err != nil {
+				if errors.Is(err, models.ErrNoRecord) {
+					app.badRequestResponse(w, r, err)
+				} else {
+					app.serverError(w, err)
+				}
+				return
+			}
+
+			var userPosts []dto.HPost
+			err = json.Unmarshal(postsBytes, &userPosts)
+			if err != nil {
+				app.serverError(w, err) //arreglar esto con el error correspondiente
+				return
+			}
+
+			mu.Lock()
+			posts = append(posts, userPosts...)
+			mu.Unlock()
+		}(followId)
+	}
+	wg.Wait()
+
+	posts = append(posts, ownPosts...)
+	sort.Slice(posts, func(i, j int) bool {
+		return posts[i].CreatedAt.After(posts[j].CreatedAt)
+	})
+
+	err = json.NewEncoder(w).Encode(posts)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	//w.Write([]byte("Getting users"))
+}
 
 func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -341,7 +425,7 @@ func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	messageBytes, err := app.peer.GetValue("post", id)
+	messageBytes, err := app.peer.GetValue("hpost", id)
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -353,7 +437,7 @@ func (app *application) GetMessageHandler(w http.ResponseWriter, r *http.Request
 
 	app.infoLog.Printf("Mensaje obtenido %s", string(messageBytes))
 
-	var post models.Post
+	var post dto.HPost
 	err = json.Unmarshal(messageBytes, &post)
 	if err != nil {
 		app.serverError(w, err) //arreglar esto con el error correspondiente
@@ -389,7 +473,9 @@ func (app *application) ListUserMessagesHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	var posts []models.Post
+	fmt.Println(string(postsBytes))
+
+	var posts []dto.HPost
 	err = json.Unmarshal(postsBytes, &posts)
 	if err != nil {
 		app.serverError(w, err) //arreglar esto con el error correspondiente

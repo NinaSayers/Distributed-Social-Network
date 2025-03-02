@@ -171,6 +171,15 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 		response, err := json.Marshal(message)
 		return &response, err
 
+	case "hpost":
+		message, err := s.Post.HGet(base58.Encode(id))
+		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
+			return nil, err
+		}
+		response, err := json.Marshal(message)
+		return &response, err
+
 	case "repost":
 		repost, err := s.Repost.Get(base58.Encode(id))
 		if err != nil {

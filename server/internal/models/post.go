@@ -55,11 +55,11 @@ func (m *PostModel) Get(id string) (*Post, error) {
 	return p, nil
 }
 
-func (m *PostModel) HGet(id string) (*Post, error) {
+func (m *PostModel) HGet(id string) (*dto.HPost, error) {
 	stmt := `
         SELECT 
             p.post_id, p.user_id, p.content, p.created_at, p.updated_at,
-            u.username, u.email, u.name, u.bio, u.avatar
+            u.username, u.email, u.name, u.avatar, u.created_at
         FROM 
             post p
         JOIN 
@@ -68,20 +68,24 @@ func (m *PostModel) HGet(id string) (*Post, error) {
             p.post_id = ?`
 	row := m.DB.QueryRow(stmt, id)
 
-	p := &Post{}
-	u := &User{}
-	err := row.Scan(&p.PostID, &p.UserID, &p.Content, &p.CreatedAt, &p.UpdatedAt)
+	p := &dto.HPost{}
+	u := &dto.CoreUserDTO{}
+	err := row.Scan(
+		&p.PostID, &u.UserID, &p.Content, &p.CreatedAt, &p.UpdatedAt, &u.UserName,
+		&u.Email, &u.Name, &u.Avatar, &u.CreatedAt,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNoRecord
 		}
 		return nil, NewErrDatabaseOperationFailed(err)
 	}
+	p.User = *u
 
 	return p, nil
 }
 
-func (m *PostModel) ListByUser(userID string) ([]*Post, error) {
+func (m *PostModel) ListByUser(userID string) ([]*dto.HPost, error) {
 
 	var count int
 	err := m.DB.QueryRow("SELECT COUNT(*) FROM user WHERE user_id = ?", userID).Scan(&count)
@@ -91,11 +95,17 @@ func (m *PostModel) ListByUser(userID string) ([]*Post, error) {
 	if count == 0 {
 		return nil, ErrNoRecord
 	}
-
-	stmt := `SELECT post_id, user_id, content, created_at 
-	 		FROM post
-	 		WHERE user_id = ?
-	 		ORDER BY created_at DESC`
+	stmt := `
+        SELECT 
+            p.post_id, p.user_id, p.content, p.created_at, p.updated_at,
+            u.username, u.email, u.name, u.avatar, u.created_at
+        FROM 
+            post p
+        JOIN 
+            user u ON p.user_id = u.user_id
+        WHERE 
+            p.user_id = ?
+		ORDER BY p.created_at DESC`
 
 	rows, err := m.DB.Query(stmt, userID)
 	if err != nil {
@@ -104,15 +114,23 @@ func (m *PostModel) ListByUser(userID string) ([]*Post, error) {
 
 	defer rows.Close()
 
-	posts := []*Post{}
+	posts := []*dto.HPost{}
 
 	for rows.Next() {
-		msg := &Post{}
-		err = rows.Scan(&msg.PostID, &msg.UserID, &msg.Content, &msg.CreatedAt)
+		p := &dto.HPost{}
+		u := &dto.CoreUserDTO{}
+		err := rows.Scan(
+			&p.PostID, &u.UserID, &p.Content, &p.CreatedAt, &p.UpdatedAt, &u.UserName,
+			&u.Email, &u.Name, &u.Avatar, &u.CreatedAt,
+		)
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrNoRecord
+			}
 			return nil, NewErrDatabaseOperationFailed(err)
 		}
-		posts = append(posts, msg)
+		p.User = *u
+		posts = append(posts, p)
 	}
 
 	if err = rows.Err(); err != nil {

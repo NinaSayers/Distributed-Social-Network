@@ -5,7 +5,7 @@ import "net/http"
 // The routes() method returns a servemux containing our application routes.
 func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
-	// mux.HandleFunc("/", app.feed)
+	mux.HandleFunc("GET /feed/{id}", app.GetFeed)
 	// mux.HandleFunc("GET	/users", app.ListUsersHandler)
 	mux.HandleFunc("POST /users", app.CreateUserHandler)
 	mux.HandleFunc("GET /users/{id}", app.GetUserHandler)
@@ -18,10 +18,10 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET	/users/followers/{id}", app.ListFollowersHandler)
 	mux.HandleFunc("GET	/users/following/{id}", app.ListFollowingHandler)
 
-	mux.HandleFunc("POST /messages", app.CreateMessageHandler)
+	mux.HandleFunc("POST /posts", app.CreateMessageHandler)
 	// mux.HandleFunc("GET /feed", app.feed)
-	mux.HandleFunc("GET /messages/{id}", app.GetMessageHandler)
-	mux.HandleFunc("GET /users/messages/{id}", app.ListUserMessagesHandler)
+	mux.HandleFunc("GET /posts/{id}", app.GetMessageHandler)
+	mux.HandleFunc("GET /posts/user/{id}", app.ListUserMessagesHandler)
 	// mux.HandleFunc("DELETE /messages/{id}", app.DeleteMessageHandler)
 
 	// mux.HandleFunc("GET /timeline", app.GetTimelineHandler)

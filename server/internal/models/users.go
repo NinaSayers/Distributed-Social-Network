@@ -81,7 +81,7 @@ func (m *UserModel) Authenticate(email string, password string) (*User, error) {
 }
 
 func (m *UserModel) Get(user_id string) (*dto.AuthUserDTO, error) {
-	stmt := `SELECT user_id, username, email, password_hash, created_at, updated_at 
+	stmt := `SELECT user_id, username, email, password_hash, created_at, updated_at, avatar, bio, name 
 			FROM user
 			WHERE user_id = ?
 			`
@@ -90,7 +90,7 @@ func (m *UserModel) Get(user_id string) (*dto.AuthUserDTO, error) {
 
 	u := &dto.AuthUserDTO{}
 
-	err := row.Scan(&u.UserID, &u.UserName, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.UserID, &u.UserName, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt, &u.Avatar, &u.Bio, &u.Name)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
