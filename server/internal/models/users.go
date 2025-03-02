@@ -27,12 +27,18 @@ type UserModel struct {
 func (m *UserModel) Create(user *dto.CreateUserDTO) (*User, error) {
 	stmt := `INSERT INTO user (user_id, username, email, password_hash) VALUES (?, ?, ?, ?)`
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
-	if err != nil {
-		return nil, err
+	var hashedPassword string
+	if user.PasswordHash == "" {
+		hashedPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+		if err != nil {
+			return nil, err
+		}
+		hashedPassword = string(hashedPasswordBytes)
+	} else {
+		hashedPassword = user.PasswordHash
 	}
 
-	_, err = m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, hashedPassword)
+	_, err := m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, hashedPassword)
 	if err != nil {
 		return nil, err
 	}

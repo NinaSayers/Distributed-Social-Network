@@ -100,14 +100,15 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(payload.Password))
 	if err != nil {
+		app.errorLog.Println("Validating User", err)
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			app.invalidCredentialsResponse(w, r)
-			return
 		} else {
 			app.serverError(w, err)
-			return
 		}
+		return
 	}
+	app.infoLog.Println("Successful authentication user ", user.UserName)
 
 	token, err := GenerateJWT(user.UserName)
 	if err != nil {
