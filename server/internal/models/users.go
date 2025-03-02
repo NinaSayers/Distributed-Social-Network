@@ -54,30 +54,39 @@ func (m *UserModel) Create(user *dto.CreateUserDTO) (*dto.AuthUserDTO, error) {
 	return m.Get(user.UserID)
 }
 
-func (m *UserModel) Authenticate(email string, password string) (*User, error) {
+func (m *UserModel) GetAll(query string) ([]*dto.CoreUserDTO, int, error) {
+	stmt := `SELECT user_id, username, email, name, avatar, created_at
+			FROM user`
 
-	u := &User{}
-
-	stmt := "SELECT user_id, username, email, password_hash, created_at, updated_at  FROM user WHERE email = ?"
-	err := m.DB.QueryRow(stmt, email).Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrInvalidCredentials
-		} else {
-			return nil, ErrInvalidCredentials
-		}
+	if query != "" {
+		stmt += " WHERE username LIKE ? OR email LIKE ? OR name LIKE ?"
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
+	rows, err := m.DB.Query(stmt, "%"+query+"%", "%"+query+"%", "%"+query+"%")
 	if err != nil {
-		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return nil, ErrInvalidCredentials
-		} else {
-			return nil, err
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	users := []*dto.CoreUserDTO{}
+
+	rowCount := 0
+	for rows.Next() {
+		u := &dto.CoreUserDTO{}
+		err := rows.Scan(&u.UserID, &u.UserName, &u.Email, &u.Name, &u.Avatar, &u.CreatedAt)
+		if err != nil {
+			continue
 		}
+
+		users = append(users, u)
+		rowCount++
 	}
 
-	return u, nil
+	if err = rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return users, rowCount, nil
 }
 
 func (m *UserModel) Get(user_id string) (*dto.AuthUserDTO, error) {
@@ -111,6 +120,7 @@ func (m *UserModel) Get(user_id string) (*dto.AuthUserDTO, error) {
 		return nil, err
 	}
 
+	fmt.Println("Seguidoreeees", following, followers)
 	u.Following = following
 	u.Followers = followers
 	return u, nil

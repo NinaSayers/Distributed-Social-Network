@@ -284,6 +284,24 @@ func (s *SqliteDb) getTableKeys(tableName string) ([][]byte, error) {
 	return tableKeys, nil
 }
 
+func (s *SqliteDb) Search(entity, criteria string) (*[]byte, int32, error) {
+	switch entity {
+	case "user":
+		fmt.Printf("INFRA SEARCH %s LIKE %s \n", entity, criteria)
+		users, count, err := s.User.GetAll(criteria)
+		if err != nil {
+			return nil, 0, err
+		}
+		fmt.Printf("INFRA SEARCH %s LIKE %s FOUND %v \n", entity, criteria, count)
+		response, err := json.Marshal(users)
+		if err != nil {
+			return nil, 0, err
+		}
+		return &response, int32(count), err
+	}
+	return nil, 0, errors.New("INFRA invalid entity")
+}
+
 func (s *SqliteDb) Delete(entity string, id []byte) error {
 	fmt.Printf("INFRA DELETE %s - %s\n", entity, base58.Encode(id))
 	switch entity {

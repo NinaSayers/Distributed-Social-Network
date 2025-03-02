@@ -29,9 +29,15 @@ func (m *PostModel) Create(post *dto.CreatePostDTO) (*Post, error) {
 	if count == 0 {
 		return nil, ErrNoRecord
 	}
+	if post.CreatedAt.IsZero() {
+		post.CreatedAt = time.Now()
+	}
+	if post.UpdatedAt.IsZero() {
+		post.UpdatedAt = time.Now()
+	}
 
-	stmt := `INSERT INTO post (user_id, post_id, content) VALUES (?, ?, ?)`
-	_, err = m.DB.Exec(stmt, post.UserID, post.PostID, post.Content)
+	stmt := `INSERT INTO post (user_id, post_id, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)`
+	_, err = m.DB.Exec(stmt, post.UserID, post.PostID, post.Content, post.CreatedAt, post.UpdatedAt)
 	if err != nil {
 		return nil, NewErrDatabaseOperationFailed(err)
 	}

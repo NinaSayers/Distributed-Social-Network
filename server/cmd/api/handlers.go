@@ -279,30 +279,35 @@ func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func (app *application) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
-// 	// if r.URL.Path != "/" {
-// 	// 	app.notFound(w)
-// 	// 	return
-// 	// }
-// 	users, err := app.models.User.List()
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
+func (app *application) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
+	queryParams := r.URL.Query()
+	query := queryParams.Get("query")
+	app.infoLog.Println("esta es la query ", query)
+	listUsersBytes, err := app.peer.GetAll("user", query, 20)
+	if err != nil {
+		fmt.Println("Error al cargar usuarios", err)
+	}
+	fmt.Println(string(listUsersBytes[0]))
 
-// 	w.Header().Set("Content-Type", "application/json")
+	var users []dto.CoreUserDTO
+	for _, usersBytes := range listUsersBytes {
+		var u []dto.CoreUserDTO
+		err = json.Unmarshal(usersBytes, &u)
+		if err != nil {
+			app.serverError(w, err)
+			continue
+		}
+		users = append(users, u...)
+	}
 
-// 	err = json.NewEncoder(w).Encode(users)
-// 	if err != nil {
-// 		app.serverError(w, err)
-// 		return
-// 	}
+	w.Header().Set("Content-Type", "application/json")
 
-// 	// for _, user := range users {
-// 	// 	fmt.Fprintf(w, "%+v\n", user)
-// 	// }
-// 	// w.Write([]byte("Getting users"))
-// }
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+}
 
 // func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 
