@@ -47,6 +47,45 @@ docker run -it --network test_kademlia --network-alias client --dns 10.0.10.2 -v
 
 docker run -d --network test_kademlia --network-alias node1 -v "$(pwd)":/app -v db_node1:/app/data -w /app --name node1 test go run ./server/cmd/api
 
+### Comandos para levantar los contenedores en redes distintas (en modo interactivo, pero esto no es imprescindible):
+
+#### Redes (crearlas si es necesario):
+docker network create --subnet=10.0.10.0/24 test_kademlia
+docker network create --subnet=10.0.11.0/24 client
+
+#### Servers:
+docker run -it --network test_kademlia --network-alias node1 --cap-add=NET_ADMIN -v "$(pwd)":/app -v db_node1:/app/data --name node1 test sh
+
+**requisitos de conectividad**
+docker exec -it node1 sh (para interactuar con el contenedor)
+ip route del default via 10.0.10.1 (en caso de no ser este el ip, consultarlo mediante el comando **ip route** dentro del contenedor)
+
+#### DNS:
+docker run -it --network test_kademlia --name dns1 --ip 10.0.10.5 dns
+
+#### Router:
+docker run -d \
+--name router \
+--network test_kademlia --ip 10.0.10.254 \
+--cap-add=NET_ADMIN \
+router-image
+
+**requisitos de conectividad**
+docker exec -it router sh
+ip route del default via 10.0.10.1 dev eth0
+exit
+docker network connect client router --ip 10.0.11.254
+docker exec -it router sh
+ip route del default via 10.0.11.1 dev eth1
+
+#### Clients:
+docker run -ot --network client --network-alias client1 --cap-add=NET_ADMIN --dns 10.0.10.5 -v "$(pwd)":/app --name client1 test
+
+**requisitos de conectividad**
+docker exec -it client1 sh (para interactuar con el contenedor)
+ip route del default via 10.0.11.1
+ip route add default via 10.0.11.254
+
 
 ## Deficiencias a Resolver:
 - Al caerse nodos de la red, se intenta contactar con ellos no se recupera del pfallo, esto afecta el guardar valores nuevos en la red, por lo que se sospecha que el error esta en la funcion node.StoreValue de la implementacion de kademlia.
