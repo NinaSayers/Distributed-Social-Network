@@ -28,15 +28,19 @@ func NewSqliteDb(dbPath string, script string) *SqliteDb {
 		log.Fatalf("Failed to connect to SQLite: %v", err)
 	}
 
-	// Create table if not exists
-	sqlBytes, err := os.ReadFile(script)
-	if err != nil {
-		log.Fatalf("Failed to load sql script: %v", err)
-	}
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		fmt.Println("Base de datos no existe, creando...")
+		sqlBytes, err := os.ReadFile(script)
+		if err != nil {
+			log.Fatalf("Failed to load sql script: %v", err)
+		}
 
-	_, err = db.Exec(string(sqlBytes))
-	if err != nil {
-		log.Fatalf("Failed to create table: %v", err)
+		_, err = db.Exec(string(sqlBytes))
+		if err != nil {
+			log.Fatalf("Failed to create table: %v", err)
+		}
+	} else {
+		fmt.Println("Base de datos existe, cargando...")
 	}
 
 	return &SqliteDb{db: db, Models: models.NewModels(db)}
@@ -192,6 +196,15 @@ func (s *SqliteDb) Read(entity string, id []byte) (*[]byte, error) {
 			return nil, err
 		}
 		response, err := json.Marshal(users)
+		return &response, err
+
+	case "follow":
+		follow, err := s.Relationship.Get(base58.Encode(id))
+		if err != nil {
+			fmt.Printf("INFRA READ ERROR %s\n", err)
+			return nil, err
+		}
+		response, err := json.Marshal(follow)
 		return &response, err
 
 	case "follower:user":

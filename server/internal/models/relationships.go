@@ -40,12 +40,36 @@ func (m *RelationshipModel) FollowUser(follow *dto.FollowUserDTO) error {
 	}
 
 	stmt := `INSERT INTO follow (follow_id, user_id, followee_id) VALUES (?, ?, ?)`
+	if follow.CreatedAt.IsZero() {
+		follow.CreatedAt = time.Now()
+	}
+
+	if follow.UpdatedAt.IsZero() {
+		follow.UpdatedAt = time.Now()
+	}
+
 	_, err = m.DB.Exec(stmt, follow.FollowId, follow.UserID, follow.FolloweeID, time.Now())
 	if err != nil {
 		return NewErrDatabaseOperationFailed(err)
 	}
 
 	return nil
+}
+
+func (m *RelationshipModel) Get(id string) (*Follow, error) {
+	stmt := `SELECT follow_id, user_id, followee_id, created_at FROM follow WHERE follow_id = ?`
+	row := m.DB.QueryRow(stmt, id)
+
+	f := &Follow{}
+	err := row.Scan(&f.FollowID, &f.UserID, &f.FolloweeID, &f.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, NewErrDatabaseOperationFailed(err)
+	}
+
+	return f, nil
 }
 
 func (m *RelationshipModel) UnfollowUser(userId, followeeId string) error {
