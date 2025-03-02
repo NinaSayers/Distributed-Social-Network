@@ -54,3 +54,5 @@ docker run -d --network test_kademlia --network-alias node1 -v "$(pwd)":/app -v 
 - Al caerse nodos de la red, el login falla, a pesar de el nodo tener la replica correctamente y devolver el usuario, la autenticación no se realiza correctamente.
 
 - Debe bajarse el timpo de replicación dado que se debe esperar como minimo el doble del tiempo de recuperación para una recuperación correcta, (si un usuario no logra replicarse por el tiempo en el que entro el nodo es posterior a la llamada de replicación del usuario, los post asociados a el van a fallar por no encontrar la entidad principal)
+
+- Al replicar tabla de usuarios se rehashea la contraseña corrompiendola y haciendola inaccesible para el usuario
