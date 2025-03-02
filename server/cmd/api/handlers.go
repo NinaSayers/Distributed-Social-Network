@@ -119,6 +119,47 @@ func (app *application) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (app *application) GetUserEmailHandler(w http.ResponseWriter, r *http.Request) {
+	email := r.PathValue("mail")
+	fmt.Println(email)
+	if email == "" {
+		app.badRequestResponse(w, r, errors.New("missing user email"))
+		return
+	}
+
+	app.infoLog.Printf("Email to search: %s \n", email)
+
+	hash := sha256.Sum256([]byte(email))
+	id := base58.Encode(hash[:])
+
+	app.infoLog.Printf("Email to search %s encripted %s \n", email, id)
+
+	userBytes, err := app.peer.GetValue("user", id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.badRequestResponse(w, r, err)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	var user dto.AuthUserDTO
+	err = json.Unmarshal(userBytes, &user)
+	if err != nil {
+		app.serverError(w, err) //arreglar esto con el error correspondiente
+		return
+	}
+	app.infoLog.Printf("User %s retrived \n", user.UserName)
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+}
+
 func (app *application) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	fmt.Println(id)

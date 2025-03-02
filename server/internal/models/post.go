@@ -55,6 +55,32 @@ func (m *PostModel) Get(id string) (*Post, error) {
 	return p, nil
 }
 
+func (m *PostModel) HGet(id string) (*Post, error) {
+	stmt := `
+        SELECT 
+            p.post_id, p.user_id, p.content, p.created_at, p.updated_at,
+            u.username, u.email, u.name, u.bio, u.avatar
+        FROM 
+            post p
+        JOIN 
+            user u ON p.user_id = u.user_id
+        WHERE 
+            p.post_id = ?`
+	row := m.DB.QueryRow(stmt, id)
+
+	p := &Post{}
+	u := &User{}
+	err := row.Scan(&p.PostID, &p.UserID, &p.Content, &p.CreatedAt, &p.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoRecord
+		}
+		return nil, NewErrDatabaseOperationFailed(err)
+	}
+
+	return p, nil
+}
+
 func (m *PostModel) ListByUser(userID string) ([]*Post, error) {
 
 	var count int

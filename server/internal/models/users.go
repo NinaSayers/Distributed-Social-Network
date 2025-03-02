@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
@@ -18,27 +19,34 @@ type User struct {
 	PasswordHash string    `json:"password_hash"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+
+	Bio    string `json:"bio,omitempty"`
+	Name   string `json:"name"`
+	Avatar string `json:"avatar,omitempty"`
 }
 
 type UserModel struct {
 	DB *sql.DB
 }
 
-func (m *UserModel) Create(user *dto.CreateUserDTO) (*User, error) {
-	stmt := `INSERT INTO user (user_id, username, email, password_hash) VALUES (?, ?, ?, ?)`
+func (m *UserModel) Create(user *dto.CreateUserDTO) (*dto.AuthUserDTO, error) {
+	stmt := `INSERT 
+	INTO user (user_id, username, email, password_hash, name, bio, avatar) 
+	VALUES (?, ?, ?, ?, ?, ?, ?)`
 
-	var hashedPassword string
 	if user.PasswordHash == "" {
 		hashedPasswordBytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
 		if err != nil {
 			return nil, err
 		}
-		hashedPassword = string(hashedPasswordBytes)
-	} else {
-		hashedPassword = user.PasswordHash
+		user.PasswordHash = string(hashedPasswordBytes)
+		rand.Seed(time.Now().UnixNano())
+		randomNumber := rand.Intn(1000000)
+		user.Avatar = fmt.Sprintf("https://avatars.githubusercontent.com/u/%d?v=4", randomNumber)
+
 	}
 
-	_, err := m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, hashedPassword)
+	_, err := m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, user.PasswordHash, user.Name, user.Bio, user.Avatar)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +80,7 @@ func (m *UserModel) Authenticate(email string, password string) (*User, error) {
 	return u, nil
 }
 
-func (m *UserModel) Get(user_id string) (*User, error) {
+func (m *UserModel) Get(user_id string) (*dto.AuthUserDTO, error) {
 	stmt := `SELECT user_id, username, email, password_hash, created_at, updated_at 
 			FROM user
 			WHERE user_id = ?
@@ -80,9 +88,9 @@ func (m *UserModel) Get(user_id string) (*User, error) {
 
 	row := m.DB.QueryRow(stmt, user_id)
 
-	u := &User{}
+	u := &dto.AuthUserDTO{}
 
-	err := row.Scan(&u.UserID, &u.Username, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.UserID, &u.UserName, &u.Email, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -93,6 +101,18 @@ func (m *UserModel) Get(user_id string) (*User, error) {
 		}
 	}
 
+	following, err := CheckFollowing(user_id, m.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	followers, err := CheckFollowers(user_id, m.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	u.Following = following
+	u.Followers = followers
 	return u, nil
 }
 

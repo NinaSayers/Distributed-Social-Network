@@ -9,18 +9,19 @@ func (app *application) routes() http.Handler {
 	// mux.HandleFunc("GET	/users", app.ListUsersHandler)
 	mux.HandleFunc("POST /users", app.CreateUserHandler)
 	mux.HandleFunc("GET /users/{id}", app.GetUserHandler)
+	mux.HandleFunc("GET /users/email/{mail}", app.GetUserEmailHandler)
 	// mux.HandleFunc("PUT /users/{id}", app.UpdateUserHandler)
 	// mux.HandleFunc("DELETE /users/{id}", app.DeleteUserHandler)
 
-	mux.HandleFunc("POST /users/{id}/follow", app.FollowUserHandler)
+	mux.HandleFunc("POST /users/follow/{id}", app.FollowUserHandler)
 	// mux.HandleFunc("DELETE /users/{id}/follow", app.UnfollowUserHandler)
-	mux.HandleFunc("GET	/users/{id}/followers", app.ListFollowersHandler)
-	mux.HandleFunc("GET	/users/{id}/following", app.ListFollowingHandler)
+	mux.HandleFunc("GET	/users/followers/{id}", app.ListFollowersHandler)
+	mux.HandleFunc("GET	/users/following/{id}", app.ListFollowingHandler)
 
 	mux.HandleFunc("POST /messages", app.CreateMessageHandler)
 	// mux.HandleFunc("GET /feed", app.feed)
 	mux.HandleFunc("GET /messages/{id}", app.GetMessageHandler)
-	mux.HandleFunc("GET /users/{id}/messages", app.ListUserMessagesHandler)
+	mux.HandleFunc("GET /users/messages/{id}", app.ListUserMessagesHandler)
 	// mux.HandleFunc("DELETE /messages/{id}", app.DeleteMessageHandler)
 
 	// mux.HandleFunc("GET /timeline", app.GetTimelineHandler)
@@ -33,10 +34,10 @@ func (app *application) routes() http.Handler {
 	// mux.HandleFunc("GET /users/{id}/stats", app.GetUserStatsHandler)
 	mux.HandleFunc("POST /auth/login", app.LoginHandler)
 	// mux.HandleFunc("POST /auth/logout", app.LogoutHandler)
-	mux.HandleFunc("POST /auth/register", app.RegisterUserHandler)
+	mux.HandleFunc("POST /auth/register", app.CreateUserHandler)
 
 	return app.recoverPanic(
 		app.logRequest(
-			secureHeaders(mux),
+			enableCORS(secureHeaders(mux)),
 		))
 }
