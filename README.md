@@ -58,24 +58,25 @@ docker run -it --network client-net --network-alias node1 --cap-add=NET_ADMIN -v
 
 **requisitos de conectividad**
 docker exec -it node1 sh (para interactuar con el contenedor)
-ip route del default via 10.0.10.1 (en caso de no ser este el ip, consultarlo mediante el comando **ip route** dentro del contenedor)
+ip route del default via 10.0.10.1 dev eth0 (en caso de no ser este el ip, consultarlo mediante el comando **ip route** dentro del contenedor)
+ip route add default via 10.0.10.254 dev eth0
 
 #### DNS:
 docker run -it --network test_kademlia --name dns1 --ip 10.0.10.5 dns
 
+**requisitos de conectividad**
+docker exec -it dns1 sh
+ip route del default via 10.0.10.1 dev eth0
+ip route add default via 10.0.10.254 dev eth0
+
 #### Router:
 docker run -d --name router --network test_kademlia --ip 10.0.10.254 --cap-add=NET_ADMIN router-image
 
-**requisitos de conectividad**
-docker exec -it router sh
-ip route del default via 10.0.10.1 dev eth0
-exit
-docker network connect client router --ip 10.0.11.254
-docker exec -it router sh
-ip route del default via 10.0.11.1 dev eth1
+docker network connect --ip 10.0.11.254 client router
+
 
 #### Clients:
-docker run -ot --network client --network-alias client1 --cap-add=NET_ADMIN --dns 10.0.10.5 -v "$(pwd)":/app --name client1 test
+docker run -it --network client --network-alias client1 --cap-add=NET_ADMIN --dns 10.0.10.5 -v "$(pwd)":/app -w /app --name client1 test
 
 **requisitos de conectividad**
 docker exec -it client1 sh (para interactuar con el contenedor)
