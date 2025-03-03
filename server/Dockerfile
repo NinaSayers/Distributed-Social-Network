@@ -1,5 +1,5 @@
 # Usa una imagen base de Go para construir el binario
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # Establece el directorio de trabajo dentro del contenedor
 WORKDIR /app

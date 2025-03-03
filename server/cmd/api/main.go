@@ -61,7 +61,7 @@ func main() {
 		config:   cfg,
 		errorLog: errorLog,
 		infoLog:  infoLog,
-		peer:     peer.InitSqlitePeer(ip, 8080, 32140, "data/db.sqlite", "server/cmd/api/distnetdb.sql", true),
+		peer:     peer.InitSqlitePeer(ip, 8080, 32140, "../data/db.sqlite", "cmd/api/distnetdb.sql", true),
 	}
 	fmt.Println(app.config.port)
 
