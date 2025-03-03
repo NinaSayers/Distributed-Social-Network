@@ -45,7 +45,7 @@ to get the necesary dependecies for this project to run succesfully.
 
 docker run -it --network test_kademlia --network-alias client --dns 10.0.10.2 -v "$(pwd)":/app -w /app --name client test
 
-docker run -d --network test_kademlia --network-alias node1 -v "$(pwd)":/app -v db_node1:/app/data -w /app --name node1 test go run ./server/cmd/api
+docker run -d --network server-net --network-alias node1 --cap-add=NET_ADMIN -v "$(pwd)":/app -v db_node1:/app/data -w /app --name node1 test go run ./server/cmd/api
 
 ### Comandos para levantar los contenedores en redes distintas (en modo interactivo, pero esto no es imprescindible):
 
@@ -54,7 +54,7 @@ docker network create --subnet=10.0.10.0/24 test_kademlia
 docker network create --subnet=10.0.11.0/24 client
 
 #### Servers:
-docker run -it --network test_kademlia --network-alias node1 --cap-add=NET_ADMIN -v "$(pwd)":/app -v db_node1:/app/data --name node1 test sh
+docker run -it --network client-net --network-alias node1 --cap-add=NET_ADMIN -v "$(pwd)":/app -v db_node1:/app/data --name node1 test sh
 
 **requisitos de conectividad**
 docker exec -it node1 sh (para interactuar con el contenedor)
@@ -64,11 +64,7 @@ ip route del default via 10.0.10.1 (en caso de no ser este el ip, consultarlo me
 docker run -it --network test_kademlia --name dns1 --ip 10.0.10.5 dns
 
 #### Router:
-docker run -d \
---name router \
---network test_kademlia --ip 10.0.10.254 \
---cap-add=NET_ADMIN \
-router-image
+docker run -d --name router --network test_kademlia --ip 10.0.10.254 --cap-add=NET_ADMIN router-image
 
 **requisitos de conectividad**
 docker exec -it router sh

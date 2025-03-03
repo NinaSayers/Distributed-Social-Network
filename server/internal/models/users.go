@@ -2,10 +2,11 @@ package models
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/binary"
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"github.com/NinaSayers/Distributed-Social-Network/server/internal/dto"
@@ -40,10 +41,11 @@ func (m *UserModel) Create(user *dto.CreateUserDTO) (*dto.AuthUserDTO, error) {
 			return nil, err
 		}
 		user.PasswordHash = string(hashedPasswordBytes)
-		rand.Seed(time.Now().UnixNano())
-		randomNumber := rand.Intn(1000000)
-		user.Avatar = fmt.Sprintf("https://avatars.githubusercontent.com/u/%d?v=4", randomNumber)
+		hash := sha256.Sum256([]byte(user.UserID + user.Email))
+		number := binary.BigEndian.Uint32(hash[:4])
+		randomNumber := int(number) % 1000000
 
+		user.Avatar = fmt.Sprintf("https://avatars.githubusercontent.com/u/%d?v=4", randomNumber)
 	}
 
 	_, err := m.DB.Exec(stmt, user.UserID, user.UserName, user.Email, user.PasswordHash, user.Name, user.Bio, user.Avatar)
